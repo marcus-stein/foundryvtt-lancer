@@ -32,32 +32,15 @@ export class FullRepairFlow extends Flow<LancerFlowState.TextRollData> {
 export async function displayFullRepairDialog(state: FlowState<LancerFlowState.TextRollData>): Promise<boolean> {
   if (!state.data) throw new TypeError(`Full Repair flow state missing!`);
 
-  return new Promise<boolean>((resolve, reject) => {
-    new Dialog({
-      title: `FULL REPAIR - ${state.actor.name}`,
-      content: `<h3>Are you sure you want to fully repair the ${state.actor?.type} "${state.actor?.name}"?`,
-      buttons: {
-        submit: {
-          icon: '<i class="fas fa-check"></i>',
-          label: "Yes",
-          callback: async _dlg => {
-            // Gotta typeguard the actor again
-            if (!state.actor) {
-              return reject();
-            }
-            resolve(true);
-          },
-        },
-        cancel: {
-          icon: '<i class="fas fa-times"></i>',
-          label: "No",
-          callback: async () => resolve(false),
-        },
-      },
-      default: "submit",
-      close: () => resolve(false),
-    }).render(true);
-  });
+  return (
+    (await foundry.applications.api.DialogV2.confirm({
+      window: { title: `FULL REPAIR - ${state.actor.name}` },
+      content: `<h3>Are you sure you want to fully repair the ${state.actor?.type} "${state.actor?.name}"?</h3>`,
+      yes: { icon: "fas fa-check", label: "Yes" },
+      no: { icon: "fas fa-times", label: "No" },
+      rejectClose: false,
+    })) ?? false
+  );
 }
 
 export async function executeFullRepair(state: FlowState<LancerFlowState.TextRollData>): Promise<boolean> {

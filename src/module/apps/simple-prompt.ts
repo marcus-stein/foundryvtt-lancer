@@ -1,31 +1,14 @@
 // Spawn a simple dialogue to edit a string. Returns null on close
 export function promptText(title: string, prefill: string = ""): Promise<string | null> {
-  return new Promise((succ, _rej) => {
-    new Dialog(
-      {
-        title,
-        content: ` 
-          <div class="form-group">  
-            <input id="textval" type="text" style="width: 100%;" value="${prefill}"></input>
-          </div>
-          <hr>
-        `,
-        buttons: {
-          confirm: {
-            label: `Confirm`,
-            callback: async dialog_html => {
-              // Get the value
-              let new_val: string = ($(dialog_html).find("#textval")[0] as HTMLInputElement).value;
-              succ(new_val);
-            },
-          },
-        },
-        close: () => succ(null),
-        default: "confirm",
-      },
-      {
-        classes: ["lancer"],
-      }
-    ).render(true);
+  return foundry.applications.api.DialogV2.prompt({
+    window: { title },
+    classes: ["lancer"],
+    content: `<div class="form-group"><input type="text" name="text" style="width: 100%;" value="${prefill}"></div><hr>`,
+    ok: {
+      label: "Confirm",
+      callback: (_event: PointerEvent | SubmitEvent, button: HTMLButtonElement) =>
+        (button.form?.elements.namedItem("text") as HTMLInputElement | null)?.value ?? "",
+    },
+    rejectClose: false,
   });
 }

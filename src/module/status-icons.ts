@@ -827,17 +827,11 @@ export async function migrateLancerConditions() {
   and your settings have been migrated. Lancer Condition Icons will now be disabled, and you can
   feel free to uninstall it if no other worlds are using it.</p>
   <p>The page must now be refreshed for the module change to take effect.</p>`;
-  new Dialog(
-    {
-      title: `Lancer Condition Icons is Integrated`,
-      content: text,
-      buttons: {
-        ok: { label: "Refresh", callback: () => window.location.reload() },
-      },
-      default: "No",
-    },
-    {
-      width: 350,
-    }
-  ).render(true);
+  foundry.applications.api.DialogV2.wait({
+    window: { title: `Lancer Condition Icons is Integrated` },
+    position: { width: 350 },
+    content: text,
+    buttons: [{ action: "ok", label: "Refresh", default: true, callback: () => window.location.reload() }],
+    rejectClose: false,
+  });
 }

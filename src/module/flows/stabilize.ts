@@ -39,37 +39,35 @@ async function initializeStabilize(state: FlowState<LancerFlowState.StabilizeDat
 async function renderStabilizePrompt(state: FlowState<LancerFlowState.StabilizeData>): Promise<boolean> {
   if (!state.data) throw new TypeError(`Stabilize flow state data missing!`);
   const actor = state.actor;
-  let template = await renderTemplate(`systems/${game.system.id}/templates/window/promptStabilize.hbs`, {});
+  const template = await renderTemplate(`systems/${game.system.id}/templates/window/promptStabilize.hbs`, {});
 
-  let submit: boolean | null = null;
-
-  submit = await new Promise<boolean>((resolve, _reject) => {
-    new Dialog({
-      title: `STABILIZE - ${actor.name!}`,
-      content: template,
-      buttons: {
-        submit: {
-          icon: '<i class="fas fa-check"></i>',
-          label: "Submit",
-          callback: async dlg => {
-            // Typeguard the flow data again
-            if (!state.data) return;
-            state.data.option1 = <StabOptions1>$(dlg).find(".stabilize-options-1:checked").first().val();
-            state.data.option2 = <StabOptions2>$(dlg).find(".stabilize-options-2:checked").first().val();
-            resolve(true);
-          },
-        },
-        cancel: {
-          icon: '<i class="fas fa-times"></i>',
-          label: "Cancel",
-          callback: async () => resolve(false),
-        },
+  const result = (await foundry.applications.api.DialogV2.wait({
+    window: { title: `STABILIZE - ${actor.name!}` },
+    content: template,
+    buttons: [
+      {
+        action: "submit",
+        icon: "fas fa-check",
+        label: "Submit",
+        default: true,
+        callback: (_event: PointerEvent | SubmitEvent, button: HTMLButtonElement) => ({
+          option1: button.form?.querySelector<HTMLInputElement>(".stabilize-options-1:checked")?.value as StabOptions1,
+          option2: button.form?.querySelector<HTMLInputElement>(".stabilize-options-2:checked")?.value as StabOptions2,
+        }),
       },
-      default: "submit",
-      close: () => resolve(false),
-    }).render(true);
-  });
-  return submit ?? false;
+      {
+        action: "cancel",
+        icon: "fas fa-times",
+        label: "Cancel",
+        callback: (): null => null,
+      },
+    ],
+    rejectClose: false,
+  })) as { option1: StabOptions1; option2: StabOptions2 } | null;
+  if (!result) return false;
+  state.data.option1 = result.option1;
+  state.data.option2 = result.option2;
+  return true;
 }
 
 async function applyStabilizeUpdates(state: FlowState<LancerFlowState.StabilizeData>): Promise<boolean> {

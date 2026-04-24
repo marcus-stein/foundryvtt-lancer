@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '{print $9, $5}')",
+      "Bash(npm run *)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); cd \"C:\\\\Users\\\\Marcu\\\\Documents\\\\GitHub\\\\foundryvtt-lancer\"; npx tsc --noEmit 2>&1 | Select-Object -Last 60)",
+      "Read(//c//**)",
+      "Read(//c/Users/Marcu/**)",
+      "Bash(npm --version)",
+      "Bash(npx tsc *)",
+      "Bash(npm install *)",
+      "Bash(node_modules/.bin/tsc --noEmit)"
+    ]
+  }
+}
