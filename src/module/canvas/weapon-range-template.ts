@@ -32,7 +32,7 @@ export class WeaponRangeTemplate extends foundry.canvas.placeables.MeasuredTempl
     return this.range.type === RangeType.Burst;
   }
 
-  private actorSheet: FormApplication | undefined;
+  private actorSheet: foundry.applications.api.ApplicationV2 | undefined;
 
   /**
    * Creates a new WeaponRangeTemplate from a provided range object
@@ -94,7 +94,7 @@ export class WeaponRangeTemplate extends foundry.canvas.placeables.MeasuredTempl
     const cls = getDocumentClass("MeasuredTemplate");
     const template = new cls(templateData as any, { parent: canvas.scene ?? undefined });
     const object = new this(template);
-    object.actorSheet = creator?.actor?.sheet ?? undefined;
+    object.actorSheet = (creator?.actor?.sheet as foundry.applications.api.ApplicationV2) ?? undefined;
     return object;
   }
 

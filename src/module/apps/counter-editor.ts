@@ -2,30 +2,25 @@ import type { CounterData } from "../models/bits/counter";
 import { TargetedEditForm } from "./targeted-form-editor";
 
 /**
- * A helper FormApplication subclass for editing a counter
- * @extends {FormApplication}
+ * A helper ApplicationV2 subclass for editing a counter
  */
 export class CounterEditForm extends TargetedEditForm<CounterData> {
-  /* -------------------------------------------- */
+  static DEFAULT_OPTIONS = {
+    classes: ["lancer", "counter-editor"],
+    position: { width: 400, height: "auto" as const },
+    window: { title: "Counter Editing" },
+  };
 
-  /** @override */
-  static get defaultOptions() {
-    return {
-      ...super.defaultOptions,
-      template: `systems/${game.system.id}/templates/window/counter.hbs`,
-      classes: ["lancer", "counter-editor"],
-      title: "Counter Editing",
-    };
-  }
+  static PARTS = {
+    body: { template: "systems/lancer/templates/window/counter.hbs" },
+  };
 
-  /** @override */
   fixupForm(form_data: Record<string, string | number | boolean>): Record<string, string | number | boolean> {
     let name = form_data.name as string;
     let min = form_data.min as number;
     let max = form_data.max as number;
     let value = form_data.value as number;
 
-    // Pre-fixup/check value
     let invalid = [min, max, value].find(x => Number.isNaN(x));
     if (invalid !== undefined) {
       let message = `${invalid} is not a valid numeric value`;
@@ -34,7 +29,6 @@ export class CounterEditForm extends TargetedEditForm<CounterData> {
     }
     name = name.trim();
 
-    // Fixup value if min or max has moved it
     if (max < min) {
       max = min;
     }
@@ -45,7 +39,6 @@ export class CounterEditForm extends TargetedEditForm<CounterData> {
       value = max;
     }
 
-    // Submit changes
     return { name, min, max, value };
   }
 }

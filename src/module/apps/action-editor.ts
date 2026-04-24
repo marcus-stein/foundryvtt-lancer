@@ -1,34 +1,32 @@
 import { ActivationType } from "../enums";
 import type { ActionData } from "../models/bits/action";
 import { TargetedEditForm } from "./targeted-form-editor";
+
 /**
- * A helper Dialog subclass for editing an action
- * @extends {Dialog}
+ * A helper ApplicationV2 subclass for editing an action
  */
 export class ActionEditDialog extends TargetedEditForm<ActionData> {
-  /** @override */
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      template: `systems/${game.system.id}/templates/window/action_editor.hbs`,
-      title: "Action Editing",
-      classes: ["lancer", "action-editor"],
-      submitOnClose: false,
-    });
-  }
+  static DEFAULT_OPTIONS = {
+    classes: ["lancer", "action-editor"],
+    position: { width: 400, height: "auto" as const },
+    window: { title: "Action Editing" },
+  };
 
-  getData() {
-    // let activation_type: { [key: string]: string } = ActivationType;
+  static PARTS = {
+    body: { template: "systems/lancer/templates/window/action_editor.hbs" },
+  };
+
+  protected getData() {
     let activation_type: { [key: string]: string } = {};
     Object.entries(ActivationType).forEach(activation => (activation_type[activation[1]] = activation[1]));
     return {
       ...super.getData(),
       action: this.value,
-      activation_type, // Provide options for std-select for activation type
+      activation_type,
       path: this.value_path,
     };
   }
 
-  /** @override */
   fixupForm(form_data: Record<string, string | number | boolean>): Record<string, string | number | boolean> {
     let newAction: ActionData = {
       lid: form_data["action.lid"] as string,
@@ -48,12 +46,6 @@ export class ActionEditDialog extends TargetedEditForm<ActionData> {
       damage: this.value.damage || [],
       range: this.value.range || [],
     };
-
-    // Convert damage array
-
-    // Convert range array
-
-    // Submit changes
     return newAction as any;
   }
 }

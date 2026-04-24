@@ -15,24 +15,20 @@ import { Range } from "../models/bits/range";
 import { TargetedEditForm } from "./targeted-form-editor";
 
 /**
- * A helper Dialog subclass for editing a bonus
- * @extends {Dialog}
+ * A helper ApplicationV2 subclass for editing a bonus
  */
 export class BonusEditDialog extends TargetedEditForm<BonusData> {
-  /** @override */
-  static get defaultOptions() {
-    return {
-      ...super.defaultOptions,
-      template: `systems/${game.system.id}/templates/window/bonus.hbs`,
-      classes: ["lancer", "bonus-editor"],
-      title: "Bonus Editing",
-    };
-  }
+  static DEFAULT_OPTIONS = {
+    classes: ["lancer", "bonus-editor"],
+    position: { width: 400, height: "auto" as const },
+    window: { title: "Bonus Editing" },
+  };
 
-  /** @override
-   * Expose our data
-   */
-  getData(): any {
+  static PARTS = {
+    body: { template: "systems/lancer/templates/window/bonus.hbs" },
+  };
+
+  protected getData(): any {
     let iconer = new IconFactory({
       size: "m",
     });
@@ -62,7 +58,6 @@ export class BonusEditDialog extends TargetedEditForm<BonusData> {
     };
   }
 
-  /** @override */
   fixupForm(form_data: Record<string, string | number | boolean>): Record<string, string | number | boolean> {
     let new_bonus: BonusData = {
       lid: form_data.lid as string,
@@ -75,7 +70,6 @@ export class BonusEditDialog extends TargetedEditForm<BonusData> {
       weapon_types: {} as WeaponTypeChecklist,
     };
 
-    // Populate checkboxes
     new_bonus.damage_types = {} as DamageTypeChecklist;
     for (let dt of Object.values(DamageType)) {
       new_bonus.damage_types[dt] = form_data[dt] as boolean;
@@ -93,7 +87,6 @@ export class BonusEditDialog extends TargetedEditForm<BonusData> {
       new_bonus.weapon_sizes[ws] = form_data[ws] as boolean;
     }
 
-    // Submit changes
     return new_bonus as any;
   }
 }

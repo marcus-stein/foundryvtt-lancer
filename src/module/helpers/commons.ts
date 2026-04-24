@@ -1,5 +1,5 @@
 import type { HelperOptions } from "handlebars";
-import { HTMLEditDialog } from "../apps/text-editor";
+import { editText } from "../apps/text-editor";
 import type { GenControlContext } from "../interfaces";
 import * as defaults from "../util/unpacking/defaults";
 
@@ -855,7 +855,7 @@ export function handlePopoutTextEditor(html: JQuery, root_doc: LancerActor | Lan
     const path = elt.dataset.path;
     if (path) {
       let dd = drilldownDocument(root_doc, path);
-      await HTMLEditDialog.edit_text(dd.sub_doc, dd.sub_path);
+      await editText(dd.sub_doc, dd.sub_path);
     }
   });
 }
