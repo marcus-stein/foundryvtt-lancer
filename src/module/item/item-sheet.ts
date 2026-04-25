@@ -119,11 +119,10 @@ export class LancerItemSheet<T extends LancerItemType> extends foundry.applicati
       initial: "description",
     }).bind(this.element);
 
-    // JQuery shim — helpers will convert to vanilla DOM in Chunk 4
-    const html = $(this.element);
+    const html = this.element;
     initializeCollapses(html);
     applyCollapseListeners(html);
-    html.find(".ref.set.click-open").on("click", click_evt_open_ref);
+    $(html).find(".ref.set.click-open").on("click", click_evt_open_ref);
     handleRefDragging(html);
     handleContextMenus(html, this.item, !this.isEditable);
     handleTagEditButtons(html, this.item);

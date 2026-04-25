@@ -502,12 +502,12 @@ export function spoofHelper(fake_data: any): HelperOptions {
  * (e.x. to delete associated entities when remove buttons cleared)
  */
 export function handleGenControls(
-  html: JQuery,
+  html: HTMLElement,
   // Retrieves the data that we will operate on
   doc: LancerActor | LancerItem,
   post_hook?: (ctrl_info: GenControlContext) => any
 ) {
-  html
+  $(html)
     .find(".gen-control")
     .off("click")
     .on("click", async event => {
@@ -848,8 +848,8 @@ export function popout_editor_button(path: string) {
   return `<a class="fas fa-edit popout-text-edit-button" data-path="${path}"> </a>`;
 }
 
-export function handlePopoutTextEditor(html: JQuery, root_doc: LancerActor | LancerItem) {
-  html.find(".popout-text-edit-button").on("click", async evt => {
+export function handlePopoutTextEditor(html: HTMLElement, root_doc: LancerActor | LancerItem) {
+  $(html).find(".popout-text-edit-button").on("click", async evt => {
     evt.stopPropagation();
     const elt = evt.currentTarget;
     const path = elt.dataset.path;

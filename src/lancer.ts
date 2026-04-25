@@ -527,8 +527,8 @@ Hooks.on("renderChatMessageHTML", async (cm, el, data) => {
   // TODO: get rid of JQuery?
   const html = $(el);
   // Reapply listeners.
-  initializeCollapses(html);
-  applyCollapseListeners(html);
+  initializeCollapses(el);
+  applyCollapseListeners(el);
 
   // Handle old macro buttons
   html.find(".chat-button").on("click", async ev => {
@@ -640,7 +640,7 @@ Hooks.on("renderChatMessageHTML", async (cm, el, data) => {
   html.find(".lancer-damage-undo").on("click", undoDamage);
 
   // Handle clickable refs in chat messages
-  handleRefClickOpen(html);
+  handleRefClickOpen(el);
 });
 
 Hooks.on("hotbarDrop", (_bar, data, slot) => {

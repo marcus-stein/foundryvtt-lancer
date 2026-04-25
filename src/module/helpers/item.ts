@@ -1393,7 +1393,7 @@ async function _updateCounterData(root_doc: LancerActor | LancerItem, path: stri
 }
 
 // Handles  +/- buttons around _an input_
-export function handleInputPlusMinusButtons(html: JQuery, root_doc: LancerActor | LancerItem) {
+export function handleInputPlusMinusButtons(html: HTMLElement, root_doc: LancerActor | LancerItem) {
   const mod_handler =
     (delta: number) => async (evt: JQuery.ClickEvent<HTMLElement, undefined, HTMLElement, HTMLElement>) => {
       evt.stopPropagation();
@@ -1406,16 +1406,16 @@ export function handleInputPlusMinusButtons(html: JQuery, root_doc: LancerActor 
     };
 
   // Behavior is identical, just +1 or -1 depending on button
-  let decr = html.find('button[class*="clicker-minus-button"].input-update');
+  let decr = $(html).find('button[class*="clicker-minus-button"].input-update');
   decr.on("click", mod_handler(-1));
-  let incr = html.find('button[class*="clicker-plus-button"].input-update');
+  let incr = $(html).find('button[class*="clicker-plus-button"].input-update');
   incr.on("click", mod_handler(+1));
 }
 
 // Handles +/- buttons and hex clickables for _counters_
-export function handleCounterInteraction(html: JQuery, root_doc: LancerActor | LancerItem) {
+export function handleCounterInteraction(html: HTMLElement, root_doc: LancerActor | LancerItem) {
   // Make the hexes themselves clickable
-  html.find(".counter-hex").on("click", async evt => {
+  $(html).find(".counter-hex").on("click", async evt => {
     evt.stopPropagation();
     const elt = evt.currentTarget;
     const path = elt.dataset.path;
@@ -1437,14 +1437,14 @@ export function handleCounterInteraction(html: JQuery, root_doc: LancerActor | L
     };
 
   // Behavior is identical, just +1 or -1 depending on button
-  let decr = html.find('button[class*="clicker-minus-button"].hex');
+  let decr = $(html).find('button[class*="clicker-minus-button"].hex');
   decr.on("click", mod_handler(-1));
-  let incr = html.find('button[class*="clicker-plus-button"].hex');
+  let incr = $(html).find('button[class*="clicker-plus-button"].hex');
   incr.on("click", mod_handler(+1));
 }
 
-export function handlePowerUsesInteraction<T>(html: JQuery, doc: LancerActor | LancerItem) {
-  let elements = html.find(".power-uses-hex");
+export function handlePowerUsesInteraction<T>(html: HTMLElement, doc: LancerActor | LancerItem) {
+  let elements = $(html).find(".power-uses-hex");
   elements.on("click", async ev => {
     ev.stopPropagation();
 
@@ -1477,7 +1477,7 @@ export function handlePowerUsesInteraction<T>(html: JQuery, doc: LancerActor | L
  * @param doc Document to be modified
  * @param view_only If edit options should be presented
  */
-export function handleContextMenus(html: JQuery, doc: LancerActor | LancerItem, view_only: boolean = false) {
+export function handleContextMenus(html: HTMLElement, doc: LancerActor | LancerItem, view_only: boolean = false) {
   _handleContextMenus(html, ".lancer-context-menu", "click", doc, view_only);
   _handleContextMenus(html, ".weapon-profile-tab", "contextmenu", doc, view_only);
   _handleContextMenus(html, ".tag-list-append > .editable-tag-instance.compact-tag", "contextmenu", doc, view_only);
@@ -1499,7 +1499,7 @@ export function handleContextMenus(html: JQuery, doc: LancerActor | LancerItem, 
  * @param view_only If edit options should be presented
  */
 function _handleContextMenus(
-  html: JQuery,
+  html: HTMLElement,
   selector: string,
   event: string,
   doc: LancerActor | LancerItem,
@@ -1782,5 +1782,5 @@ function _handleContextMenus(
   ];
 
   // Finally, setup the context menu
-  tippyContextMenu(html.find(selector), event, all);
+  tippyContextMenu($(html).find(selector), event, all);
 }

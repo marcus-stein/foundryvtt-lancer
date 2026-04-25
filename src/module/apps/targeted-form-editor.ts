@@ -74,8 +74,8 @@ export class TargetedEditForm<T> extends HandlebarsApplicationMixin(ApplicationV
     return form_data;
   }
 
-  static handle(html: JQuery, selector: string, root_doc: LancerItem | LancerActor) {
-    html.find(selector).on("click", async evt => {
+  static handle(html: HTMLElement, selector: string, root_doc: LancerItem | LancerActor) {
+    $(html).find(selector).on("click", async evt => {
       evt.stopPropagation();
       const elt = evt.currentTarget;
       const path = elt.dataset.path;

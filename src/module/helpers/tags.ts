@@ -4,8 +4,8 @@ import { inc_if, resolveHelperDotpath } from "./commons";
 import { TagEditForm } from "../apps/tag-editor";
 import { LancerItem } from "../item/lancer-item";
 
-export function handleTagEditButtons(html: JQuery, doc: LancerItem) {
-  const elements = html.find(".tag-edit-button");
+export function handleTagEditButtons(html: HTMLElement, doc: LancerItem) {
+  const elements = $(html).find(".tag-edit-button");
   elements.on("click", ev => {
     ev.stopPropagation();
     const path = ev.currentTarget?.dataset.path;

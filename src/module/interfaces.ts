@@ -33,20 +33,18 @@ export type CachedCloudPilot = {
   cloudOwnerID: string;
 };
 
-export interface LancerActorSheetData<T extends LancerActorType> extends ActorSheet.Data<ActorSheet.Options> {
-  // Store active mech/pilot at the root level
-  active_mech?: LancerMECH;
-  pilot?: LancerPILOT;
-  // Store cloud pilot cache and potential cloud ids at the root level
-  compConPilotList: Record<string, string>;
-  cleanedOwnerID: string;
-  vaultID: string;
-  rawID: string;
-  effect_categories: ReturnType<(typeof LancerActiveEffect)["prepareActiveEffectCategories"]>;
+export interface LancerActorSheetData<T extends LancerActorType> {
+  document: LancerActor;
+  editable: boolean;
   system: Actor.SystemOfType<T>;
   itemTypes: LancerActor["itemTypes"];
   collapse: CollapseRegistry;
   deployables: Record<string, LancerDEPLOYABLE>;
+  effect_categories: ReturnType<(typeof LancerActiveEffect)["prepareActiveEffectCategories"]>;
+  actor: LancerActor;
+  active_mech?: LancerMECH;
+  pilot?: LancerPILOT;
+  compConPilotList?: Record<string, string>;
 }
 
 export interface GenControlContext {

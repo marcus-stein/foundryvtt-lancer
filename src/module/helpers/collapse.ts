@@ -94,8 +94,8 @@ export function collapseParam(
 /**
  * Generalized collapse activator
  */
-export function applyCollapseListeners(html: JQuery) {
-  html.find(".collapse-trigger").on("click", handleCollapse);
+export function applyCollapseListeners(html: HTMLElement) {
+  $(html).find(".collapse-trigger").on("click", handleCollapse);
 }
 
 const handleCollapse = (ev: Event) => {
@@ -116,8 +116,8 @@ const handleCollapse = (ev: Event) => {
   // console.debug(collapse);
 };
 
-export function initializeCollapses(html: JQuery) {
-  let collapse_sections = html.find(".collapse");
+export function initializeCollapses(html: HTMLElement) {
+  let collapse_sections = $(html).find(".collapse");
   // Init according to session store.
   collapse_sections.each((_index, section) => {
     let id = section.getAttribute("data-collapse-id");
