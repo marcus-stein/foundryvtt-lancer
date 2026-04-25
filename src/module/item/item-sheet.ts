@@ -1,4 +1,3 @@
-import type { LancerItemSheetData } from "../interfaces";
 import { LANCER } from "../config";
 import type { LancerItem, LancerItemType } from "./lancer-item";
 import { handleGenControls, handlePopoutTextEditor } from "../helpers/commons";
@@ -12,7 +11,7 @@ import {
   handleLIDListDropping,
 } from "../helpers/refs";
 import { handleContextMenus } from "../helpers/item";
-import { applyCollapseListeners, CollapseHandler, initializeCollapses } from "../helpers/collapse";
+import { applyCollapseListeners, initializeCollapses } from "../helpers/collapse";
 import { ActionEditDialog } from "../apps/action-editor";
 import { findLicenseFor, get_pack_id } from "../util/doc";
 import { lookupOwnedDeployables } from "../util/lid";
@@ -25,174 +24,121 @@ import { handleTagEditButtons } from "../helpers/tags";
 const lp = LANCER.log_prefix;
 
 /**
- * Extend the basic ItemSheet with some very simple modifications
- * @extends {ItemSheet}
+ * Extend the basic ItemSheetV2 with Lancer-specific behavior.
  */
-export class LancerItemSheet<T extends LancerItemType> extends foundry.appv1.sheets.ItemSheet<ItemSheet.Options> {
-  constructor(document: LancerItem, options: Partial<ItemSheet.Options>) {
-    super(document, options);
-    if (this.item.is_mech_weapon()) {
-      // TODO Figure out if this even does anything
-      this.options.initial = `profile${this.item.system.selected_profile_index}`;
-    }
+export class LancerItemSheet<T extends LancerItemType> extends foundry.applications.sheets.ItemSheetV2 {
+  static DEFAULT_OPTIONS = {
+    classes: ["lancer", "sheet", "item"],
+    position: { width: 700, height: 700 },
+    tag: "form" as const,
+    form: {
+      submitOnChange: true,
+      closeOnSubmit: false,
+    },
+  };
+
+  // Placeholder — template is resolved dynamically in _renderHTML
+  static PARTS = {
+    body: { template: "" },
+  };
+
+  get item(): LancerItem {
+    return this.document as LancerItem;
   }
 
-  // Tracks collapse state between renders
-  protected collapse_handler = new CollapseHandler();
-
-  /**
-   * @override
-   * Extend and override the default options used by the Item Sheet
-   */
-  static get defaultOptions(): ItemSheet.Options {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ["lancer", "sheet", "item"],
-      width: 700,
-      height: 700,
-      tabs: [
-        {
-          navSelector: ".lancer-tabs",
-          contentSelector: ".sheet-body",
-          initial: "description",
-        },
-      ],
-    });
+  get template(): string {
+    return `systems/lancer/templates/item/${this.document.type}.hbs`;
   }
 
-  /** @override */
-  get template() {
-    const path = `systems/${game.system.id}/templates/item`;
-    return `${path}/${this.item.type}.hbs`;
+  protected async _renderHTML(context: object, _options: any): Promise<Record<string, HTMLElement>> {
+    const html = await renderTemplate(this.template, context as Record<string, unknown>);
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-application-part", "body");
+    wrapper.innerHTML = html;
+    return { body: wrapper };
   }
 
-  /* -------------------------------------------- */
-
-  /**
-   * Private helper that applies context menus according to the editability of the sheet.
-   * @param html {JQuery}    The prepared HTML object ready to be rendered into the DOM
-   * @param data_getter      Reference to a function which can provide the sheet data
-   * @param commit_func      Reference to a function which can commit/save data back to the document
-   */
-  _activateContextListeners(html: JQuery) {
-    // Enable custom context menu triggers. If the sheet is not editable, show only the "view" option.
-    handleContextMenus(html, this.item, !this.options.editable);
-    // Enable tag edit buttons
-    handleTagEditButtons(html, this.item);
-  }
-
-  /**
-   * @override
-   * Activate event listeners using the prepared sheet HTML
-   * @param html {JQuery}   The prepared HTML object ready to be rendered into the DOM
-   */
-  activateListeners(html: JQuery) {
-    super.activateListeners(html);
-
-    // Enable collapse triggers.
-    initializeCollapses(html);
-    applyCollapseListeners(html);
-
-    let getfunc = () => this.getData();
-    let commitfunc = (_: any) => {
-      ui.notifications?.error("DEPRECATED");
+  async _prepareContext(_opts: any): Promise<object> {
+    const base = await super._prepareContext(_opts);
+    const item = this.item;
+    const context: Record<string, unknown> = {
+      ...base,
+      item,
+      system: item.system,
+      editable: this.isEditable,
+      collapse: {},
+      deployables: {} as Record<string, LancerDEPLOYABLE>,
+      license: null,
     };
 
-    // Make refs clickable
-    $(html).find(".ref.set.click-open").on("click", click_evt_open_ref);
-
-    // Enable ref dragging
-    handleRefDragging(html);
-
-    this._activateContextListeners(html);
-
-    // Everything below here is only needed if the sheet is editable
-    if (!this.options.editable) {
-      return;
+    // Populate deployables
+    if (!item.pack && item.actor) {
+      context.deployables = lookupOwnedDeployables(item.actor);
+    } else {
+      const deps =
+        (await game.packs.get(get_pack_id(EntryType.DEPLOYABLE))?.getDocuments({ type: EntryType.DEPLOYABLE })) ?? [];
+      for (const d of deps as LancerDEPLOYABLE[]) {
+        (context.deployables as Record<string, LancerDEPLOYABLE>)[d.system.lid] = d;
+      }
     }
 
-    // Make +/- buttons work
+    // License lookup
+    const actor = item.actor as any;
+    if (actor?.is_pilot() || actor?.is_mech()) {
+      context.license = await findLicenseFor(item, actor);
+    } else {
+      context.license = await findLicenseFor(item);
+    }
+
+    if (item.is_organization()) {
+      context.org_types = OrgType;
+    }
+
+    if (item.is_status()) {
+      context.status_types = StatusConditionType;
+      if (!item.system.lid) {
+        (item.system as any).lid = `status-${item.id}`;
+      }
+    }
+
+    console.log(`${lp} Rendering with following item ctx: `, context);
+    return context;
+  }
+
+  async _onFirstRender(_context: object, _options: any): Promise<void> {
+    this.element.setAttribute("autocomplete", "off");
+    // Add item type as CSS class for type-specific styling
+    this.element.classList.add(this.document.type);
+  }
+
+  async _onRender(_context: object, _options: any): Promise<void> {
+    // Activate tabs
+    new foundry.applications.ux.Tabs({
+      navSelector: ".lancer-tabs",
+      contentSelector: ".sheet-body",
+      initial: "description",
+    }).bind(this.element);
+
+    // JQuery shim — helpers will convert to vanilla DOM in Chunk 4
+    const html = $(this.element);
+    initializeCollapses(html);
+    applyCollapseListeners(html);
+    html.find(".ref.set.click-open").on("click", click_evt_open_ref);
+    handleRefDragging(html);
+    handleContextMenus(html, this.item, !this.isEditable);
+    handleTagEditButtons(html, this.item);
+
+    if (!this.isEditable) return;
+
     handleInputPlusMinusButtons(html, this.item);
-
-    // Make counter pips work
     handleCounterInteraction(html, this.item);
-
-    // Enable hex use triggers.
     handleUsesInteraction(html, this.item);
-
-    // Allow dragging items into lists
     handleDocListDropping(html, this.item);
     handleLIDListDropping(html, this.item);
-
-    // Allow set things by drop. Mostly we use this for manufacturer/license dragging
-    handleRefSlotDropping(html, this.item, null); // Don't restrict what can be dropped past type, and don't take ownership or whatever
-
-    // Enable our subform editors editors
+    handleRefSlotDropping(html, this.item, null);
     BonusEditDialog.handle(html, ".editable.bonus", this.item);
     ActionEditDialog.handle(html, ".action-editor", this.item);
-
-    // Enable popout editors
     handlePopoutTextEditor(html, this.item);
-
-    // Enable general controls, so items can be deleted and such
     handleGenControls(html, this.item);
-  }
-
-  /* -------------------------------------------- */
-
-  /**
-   * Implement the _updateObject method as required by the parent class spec
-   * This defines how to update the subject of the form when the form is submitted
-   * @private
-   */
-  async _updateObject(_event: Event | JQuery.Event, formData: any): Promise<any> {
-    // Simple writeback
-    await this.item.update(formData);
-  }
-
-  /**
-   * Prepare data for rendering the frame sheet
-   * The prepared data object contains both the actor data as well as additional sheet options
-   */
-  async getData(): Promise<LancerItemSheetData<T>> {
-    const data = super.getData() as LancerItemSheetData<T>; // Not fully populated yet!
-    data.system = this.item.system; // Set our alias
-    data.collapse = {};
-
-    // Populate deployables depending on our context
-    data.deployables = {};
-    if (!this.item.pack && this.item.actor) {
-      // Use those owned in the world
-      data.deployables = lookupOwnedDeployables(this.item.actor);
-    } else {
-      // Use compendium. This is probably overkill but, who well
-      let deps =
-        (await game.packs.get(get_pack_id(EntryType.DEPLOYABLE))?.getDocuments({ type: EntryType.DEPLOYABLE })) ?? [];
-      for (let d of deps as LancerDEPLOYABLE[]) {
-        data.deployables[d.system.lid] = d;
-      }
-    }
-
-    // Additionally we would like to find a matching license. Re-use ctx, try both a world and global reg, actor as well if it exists
-    data.license = null;
-    if (this.actor?.is_pilot() || this.actor?.is_mech()) {
-      data.license = await findLicenseFor(this.item, this.actor!);
-    } else {
-      data.license = await findLicenseFor(this.item);
-    }
-
-    if (this.item.is_organization()) {
-      // console.log(OrgType);
-      data.org_types = OrgType;
-    }
-
-    if (this.item.is_status()) {
-      data.status_types = StatusConditionType;
-      if (!data.system.lid) {
-        data.system.lid = `status-${data.document.id}`;
-      }
-    }
-
-    console.log(`${lp} Rendering with following item ctx: `, data);
-    return data;
   }
 }

@@ -13,15 +13,16 @@ import type { CollapseRegistry } from "./helpers/collapse";
 // |       SHEET DATA TYPES                             |
 // ------------------------------------------------------
 
-// These single generic type should cover all basic sheet use cases
-export interface LancerItemSheetData<T extends LancerItemType> extends ItemSheet.Data<ItemSheet.Options> {
-  // The license, if it could be recovered
-  license: LancerLICENSE | null;
+// Context type for LancerItemSheet._prepareContext
+export interface LancerItemSheetData<T extends LancerItemType> {
+  item: LancerItem;
   system: Item.SystemOfType<T>;
+  editable: boolean;
   collapse: CollapseRegistry;
   deployables: Record<string, LancerDEPLOYABLE>;
-  org_types?: { [key: string]: string }; // Organization types, only provided on org sheets
-  status_types?: { [key: string]: string }; // Status types, only provided on status sheets
+  license: LancerLICENSE | null;
+  org_types?: { [key: string]: string };
+  status_types?: { [key: string]: string };
 }
 
 export type CachedCloudPilot = {

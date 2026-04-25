@@ -6,49 +6,39 @@ import { LancerItemSheet } from "./item-sheet";
 import { LancerItem } from "./lancer-item";
 
 /**
- * Extend the generic Lancer item sheet
- * @extends {LancerItemSheet}
+ * Extend the generic Lancer item sheet for Licenses.
  */
 export class LancerLicenseSheet extends LancerItemSheet<EntryType.LICENSE> {
-  /**
-   * @override
-   * Extend and override the default options used by the generic Lancer item sheet
-   */
-  static get defaultOptions(): ItemSheet.Options {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      width: 700,
-      height: 750,
-    });
-  }
+  static DEFAULT_OPTIONS = {
+    classes: ["lancer", "sheet", "item"],
+    position: { width: 700, height: 750 },
+    tag: "form" as const,
+    form: {
+      submitOnChange: true,
+      closeOnSubmit: false,
+    },
+  };
 
-  async getData() {
-    let data = await super.getData();
+  async _prepareContext(opts: any): Promise<object> {
+    const data = await super._prepareContext(opts);
 
-    // Build an unlocks array
-    let unlocks: LancerItem[][] = [[]];
-
-    // Find the assoc frame
+    const unlocks: LancerItem[][] = [[]];
     for (let et of [EntryType.FRAME, EntryType.MECH_SYSTEM, EntryType.MECH_WEAPON, EntryType.WEAPON_MOD]) {
-      let pack = game.packs.get(get_pack_id(et));
+      const pack = game.packs.get(get_pack_id(et));
       if (pack) {
-        let index = await pack.getIndex();
-        let key = this.item.system.key;
-        for (let [id, indexData] of index.entries()) {
-          let itemLicense = indexData.system.license as string | undefined;
+        const index = await pack.getIndex();
+        const key = this.item.system.key;
+        for (const [id, indexData] of index.entries()) {
+          const itemLicense = (indexData as any).system?.license as string | undefined;
           if (itemLicense !== key) continue;
-
-          let doc = (await pack.getDocument(id)) as unknown as LancerItem;
-          let rank = doc.system.license_level as number;
-          while (unlocks.length <= rank) {
-            unlocks.push([]);
-          }
-          // Don't add duplicates
+          const doc = (await pack.getDocument(id)) as unknown as LancerItem;
+          const rank = (doc.system as any).license_level as number;
+          while (unlocks.length <= rank) unlocks.push([]);
           if (unlocks[rank].some(i => i.id === doc.id)) continue;
-          unlocks[rank].push(doc as LancerItem);
+          unlocks[rank].push(doc);
         }
       }
     }
-    // Sort the items in the unlocks. Frames first, then alphabetical by name.
     for (let i = 0; i < unlocks.length; i++) {
       unlocks[i].sort((a, b) => {
         if (a.is_frame() && !b.is_frame()) return -1;
@@ -56,45 +46,27 @@ export class LancerLicenseSheet extends LancerItemSheet<EntryType.LICENSE> {
         return a.name!.localeCompare(b.name!);
       });
     }
-
-    // Put the unlocks array in. Don't bother meddling the type
-    (data as any)["unlocks"] = unlocks;
-
-    // Pass it along
+    (data as any).unlocks = unlocks;
     return data;
   }
 
-  /**
-   * @override
-   */
-  _activateContextListeners(html: JQuery) {
-    // Enable custom context menu triggers with only the "view" option.
+  async _onRender(context: object, options: any): Promise<void> {
+    await super._onRender(context, options);
+
+    // License sheet shows context menus in view-only mode
+    const html = $(this.element);
     handleContextMenus(html, this.item, true);
-  }
 
-  /**
-   * @override
-   * Activate event listeners using the prepared sheet HTML
-   * @param html - The prepared HTML object ready to be rendered into the DOM
-   */
-  activateListeners(html: JQuery) {
-    super.activateListeners(html);
-
-    // If an item is dropped on it, set its license & manufacturer to match the license
-    handleDocDropping(html, (doc, dest, evt) => {
+    // If an item is dropped on it, set its license & manufacturer to match
+    handleDocDropping(html, (doc, _dest, _evt) => {
       if (doc.type == "Item") {
         doc.document.update({
           system: {
             license: this.item.system.key,
-            manufacturer: this.item.system.manufacturer,
+            manufacturer: (this.item.system as any).manufacturer,
           },
         });
       }
     });
-
-    // Everything below here is only needed if the sheet is editable
-    if (!this.options.editable) return;
-
-    // TODO: Add refresh button
   }
 }
