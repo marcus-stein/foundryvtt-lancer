@@ -258,10 +258,12 @@ export class LancerActor<SubType extends Actor.SubType = Actor.SubType> extends 
    * We require a customized active effect application workflow
    */
   prepareBaseData() {
+    // Always call super to clear _completedActiveEffectPhases and other per-cycle state (v14 requirement).
+    super.prepareBaseData();
     // Some modules create actors with type "base", or potentially others we don't care about
     if (!(ACTOR_TYPES as string[]).includes(this.type)) {
       console.log("Actor is not a LancerActor:", this);
-      return super.prepareBaseData();
+      return;
     }
     // TODO: Move these to the datamodels themselves
     // 1. First, finalize our system tasks. Items should be (minimally) prepared by now, so we can resolve embedded items

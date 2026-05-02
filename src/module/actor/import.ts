@@ -31,8 +31,264 @@ import { LancerActor, type LancerMECH, type LancerPILOT } from "./lancer-actor";
 import { frameToPath } from "./retrograde-map";
 const lp = LANCER.log_prefix;
 
+// Transform v2 COMP/CON data to v3 structure
+function transformV2ToV3(v2Data: any): any {
+  const v3Data = { ...v2Data };
+  
+  // Transform pilot loadout to loadouts array
+  if (v3Data.loadout && !v3Data.loadouts) {
+    v3Data.loadouts = [v3Data.loadout];
+    v3Data.active_index = 0;
+    delete v3Data.loadout;
+  }
+  
+  // Add missing pilot fields
+  v3Data.img = v3Data.img || { portrait: v3Data.portrait || "", cloud_portrait: v3Data.cloud_portrait || "" };
+  v3Data.stats = {
+    stats: {},
+    max: {
+      activations: 1,
+      size: 1,
+      sizes: [0.5, 1, 2, 3],
+      structure: 0,
+      hull: 0,
+      agi: 0,
+      sys: 0,
+      eng: 0,
+      hp: v3Data.current_hp || 9,
+      armor: v3Data.armor || 0,
+      stress: 0,
+      heat: 0,
+      speed: v3Data.speed || 4,
+      evasion: v3Data.evasion || 8,
+      edef: v3Data.edef || 8,
+      sensorRange: v3Data.sensor_range || 10,
+      saveTarget: v3Data.save || 10,
+      overshield: 0,
+      overcharge: 0,
+      burn: 0,
+      grit: 0,
+      limitedBonus: 0,
+    },
+    current: {
+      activations: 1,
+      size: 1,
+      sizes: [0.5, 1, 2, 3],
+      structure: 0,
+      hull: 0,
+      agi: 0,
+      sys: 0,
+      eng: 0,
+      hp: v3Data.current_hp || 9,
+      armor: v3Data.armor || 0,
+      stress: 0,
+      heat: 0,
+      speed: v3Data.speed || 4,
+      evasion: v3Data.evasion || 8,
+      edef: v3Data.edef || 8,
+      sensorRange: v3Data.sensor_range || 10,
+      saveTarget: v3Data.save || 10,
+      overshield: 0,
+      overcharge: 0,
+      burn: 0,
+      grit: 0,
+      limitedBonus: 0,
+      heatcap: 0,
+    },
+    stat_version: 1,
+  };
+  v3Data.counters = {
+    counter_data: v3Data.counter_data || [],
+    custom_counters: v3Data.custom_counters || [],
+  };
+  v3Data.statuses = [];
+  v3Data.customStatuses = [];
+  v3Data.resistances = v3Data.resistances || [];
+  v3Data.cover = "none";
+  v3Data.mounted = true;
+  v3Data.overwatch = false;
+  v3Data.braced = false;
+  v3Data.prepared = false;
+  v3Data.coreActive = false;
+  v3Data.corePower = true;
+  v3Data.aiControl = false;
+  v3Data.isInSelfDestruct = false;
+  v3Data.reactorDestroyed = false;
+  v3Data.isDead = false;
+  v3Data.combatActions = {
+    Protocol: true,
+    Full: true,
+    Quick1: true,
+    Quick2: true,
+    Overcharge: true,
+    Reaction: true,
+  };
+  v3Data.combat_history = v3Data.combat_history || [];
+  v3Data.round = 1;
+  v3Data.turn = 1;
+  v3Data.action = 1;
+  v3Data.usedActions = [];
+  v3Data.timed_effects = [];
+  v3Data.brews = [];
+  
+  // Transform mechs
+  if (v3Data.mechs) {
+    v3Data.mechs = v3Data.mechs.map((mech: any) => transformMechV2ToV3(mech));
+  }
+  
+  return v3Data;
+}
+
+// Transform v2 mech to v3
+function transformMechV2ToV3(v2Mech: any): any {
+  const v3Mech = { ...v2Mech };
+  
+  // Add frameData if missing (though import may not need it)
+  // v3Mech.frameData = ...; // Would need to fetch from compendium
+  
+  v3Mech.img = v3Mech.img || { portrait: v3Mech.portrait || "", cloud_portrait: v3Mech.cloud_portrait || "" };
+  v3Mech.stats = {
+    stats: {},
+    max: {
+      activations: v3Mech.current_activations || 1,
+      size: v3Mech.size || 1,
+      sizes: [0.5, 1, 2, 3],
+      structure: v3Mech.current_structure || 4,
+      hull: v3Mech.current_hull || 2,
+      agi: 0,
+      sys: 0,
+      eng: 0,
+      hp: v3Mech.current_hp || 10,
+      armor: v3Mech.current_armor || 0,
+      stress: v3Mech.current_stress || 4,
+      heat: 0,
+      speed: v3Mech.current_speed || 4,
+      evasion: v3Mech.current_evasion || 8,
+      edef: v3Mech.current_edef || 8,
+      sensorRange: v3Mech.current_sensor_range || 10,
+      saveTarget: v3Mech.current_save || 10,
+      overshield: v3Mech.current_overshield || 0,
+      overcharge: v3Mech.current_overcharge || 0,
+      burn: v3Mech.current_burn || 0,
+      limitedBonus: 0,
+      attack: 0,
+      techAttack: 0,
+      grapple: 0,
+      ram: 0,
+      sp: v3Mech.current_sp || 6,
+      heatcap: v3Mech.current_heatcap || 6,
+      repairCapacity: v3Mech.current_repair_capacity || 5,
+    },
+    current: {
+      activations: v3Mech.current_activations || 1,
+      size: v3Mech.size || 1,
+      sizes: [0.5, 1, 2, 3],
+      structure: v3Mech.current_structure || 4,
+      hull: v3Mech.current_hull || 2,
+      agi: 0,
+      sys: 0,
+      eng: 0,
+      hp: v3Mech.current_hp || 10,
+      armor: v3Mech.current_armor || 0,
+      stress: v3Mech.current_stress || 4,
+      heat: v3Mech.current_heat || 0,
+      speed: v3Mech.current_speed || 4,
+      evasion: v3Mech.current_evasion || 8,
+      edef: v3Mech.current_edef || 8,
+      sensorRange: v3Mech.current_sensor_range || 10,
+      saveTarget: v3Mech.current_save || 10,
+      overshield: v3Mech.current_overshield || 0,
+      overcharge: v3Mech.current_overcharge || 0,
+      burn: v3Mech.current_burn || 0,
+      limitedBonus: 0,
+      attack: 0,
+      techAttack: 0,
+      grapple: 0,
+      ram: 0,
+      sp: v3Mech.current_sp || 6,
+      heatcap: v3Mech.current_heatcap || 6,
+      repairCapacity: v3Mech.current_repair_capacity || 5,
+    },
+    stat_version: 1,
+  };
+  v3Mech.counters = {
+    counter_data: v3Mech.counter_data || [],
+    custom_counters: v3Mech.custom_counters || [],
+  };
+  v3Mech.statuses = v3Mech.statuses || [];
+  v3Mech.customStatuses = [];
+  v3Mech.resistances = v3Mech.resistances || [];
+  v3Mech.cover = v3Mech.cover || "none";
+  v3Mech.mounted = v3Mech.mounted !== false;
+  v3Mech.overwatch = v3Mech.overwatch || false;
+  v3Mech.braced = v3Mech.braced || false;
+  v3Mech.prepared = v3Mech.prepared || false;
+  v3Mech.coreActive = v3Mech.core_active || false;
+  v3Mech.corePower = v3Mech.core_power !== false;
+  v3Mech.aiControl = v3Mech.ai_control || false;
+  v3Mech.isInSelfDestruct = false;
+  v3Mech.reactorDestroyed = v3Mech.reactor_destroyed || false;
+  v3Mech.isDead = v3Mech.is_dead || false;
+  v3Mech.combatActions = {
+    Protocol: true,
+    Full: true,
+    Quick1: true,
+    Quick2: true,
+    Overcharge: true,
+    Reaction: true,
+  };
+  v3Mech.combat_history = v3Mech.combat_history || [];
+  v3Mech.round = v3Mech.round || 1;
+  v3Mech.turn = v3Mech.turn || 1;
+  v3Mech.action = v3Mech.action || 1;
+  v3Mech.usedActions = [];
+  v3Mech.timed_effects = [];
+  
+  // Transform loadouts
+  if (v3Mech.loadouts) {
+    v3Mech.loadouts = v3Mech.loadouts.map((loadout: any) => ({
+      ...loadout,
+      stats: {
+        stats: {},
+        max: { ...v3Mech.stats.max },
+        current: { ...v3Mech.stats.current },
+        stat_version: 1,
+      },
+      counters: {
+        counter_data: [],
+        custom_counters: [],
+      },
+      statuses: [],
+      customStatuses: [],
+      resistances: [],
+      cover: "none",
+      mounted: true,
+      overwatch: false,
+      braced: false,
+      prepared: false,
+      coreActive: false,
+      corePower: true,
+      aiControl: false,
+      isInSelfDestruct: false,
+      reactorDestroyed: false,
+      isDead: false,
+      combatActions: { ...v3Mech.combatActions },
+      combat_history: [],
+      round: 1,
+      turn: 1,
+      action: 1,
+      usedActions: [],
+      timed_effects: [],
+    }));
+  }
+  
+  v3Mech.active_loadout_index = v3Mech.active_loadout_index || 0;
+  
+  return v3Mech;
+}
+
 // Imports packed pilot data, from either a vault id or gist id
-export async function importCC(pilot: LancerPILOT, data: PackedPilotData, clearFirst = true) {
+export async function importCC(pilot: LancerPILOT, data: any, clearFirst = true) {
   const coreVersion = game.settings.get(game.system.id, LANCER.setting_core_data);
   if (!coreVersion) {
     ui.notifications!.warn(
@@ -42,6 +298,19 @@ export async function importCC(pilot: LancerPILOT, data: PackedPilotData, clearF
     return;
   }
   console.log(`${lp} Importing Pilot`, pilot, data);
+  
+  // Detect v3 format and unwrap
+  let isV3 = false;
+  if (data.EXPORT_TYPE === "Save Pilot" && data.data) {
+    data = data.data;
+    isV3 = true;
+  }
+  
+  // Transform v2 to v3 if needed
+  if (!isV3) {
+    data = transformV2ToV3(data);
+  }
+  
   if (!pilot.is_pilot() || !data) return;
   if (clearFirst) {
     await pilot.deleteEmbeddedDocuments("Item", Array.from(pilot.items.keys()));
@@ -88,7 +357,8 @@ export async function importCC(pilot: LancerPILOT, data: PackedPilotData, clearF
     let populatedArmor: string[] = [];
     let populatedWeapons: string[] = [];
     let bond: LancerBOND | null = null;
-    if (data.loadout) {
+    const activeLoadout = data.loadouts ? data.loadouts[data.active_index || 0] : data.loadout;
+    if (activeLoadout) {
       // Make a helper to get (a unique copy of) a given lid item, importing if necessary
       let pilotItemPool = [...pilot.items.contents];
       const getPilotItemByLid = async (lid: string) => {
@@ -107,7 +377,7 @@ export async function importCC(pilot: LancerPILOT, data: PackedPilotData, clearF
       let itemUpdates: any = [];
 
       // Do gear
-      let flatGear = [...(data.loadout.gear ?? []), ...(data.loadout.extendedGear ?? [])].filter(g => g);
+      let flatGear = [...(activeLoadout.gear ?? []), ...(activeLoadout.extendedGear ?? [])].filter(g => g);
       for (let gear of flatGear as PackedPilotEquipmentState[]) {
         let g = (await getPilotItemByLid(gear?.id)) as LancerPILOT_GEAR | null;
         if (g) {
@@ -116,7 +386,7 @@ export async function importCC(pilot: LancerPILOT, data: PackedPilotData, clearF
       }
 
       // Do armor
-      let flatArmor = (data.loadout.armor ?? []).filter(a => a);
+      let flatArmor = (activeLoadout.armor ?? []).filter(a => a);
       for (let armor of flatArmor as PackedPilotEquipmentState[]) {
         let a = (await getPilotItemByLid(armor?.id)) as LancerPILOT_ARMOR | null;
         if (a) {
@@ -125,7 +395,7 @@ export async function importCC(pilot: LancerPILOT, data: PackedPilotData, clearF
       }
 
       // Do weapons
-      let flatWeapons = [...(data.loadout.weapons ?? []), ...(data.loadout.extendedWeapons ?? [])].filter(w => w);
+      let flatWeapons = [...(activeLoadout.weapons ?? []), ...(activeLoadout.extendedWeapons ?? [])].filter(w => w);
       for (let weapon of flatWeapons as PackedPilotEquipmentState[]) {
         let w = (await getPilotItemByLid(weapon?.id)) as LancerPILOT_WEAPON | null;
         if (w) {
@@ -434,34 +704,34 @@ export async function importCC(pilot: LancerPILOT, data: PackedPilotData, clearF
       await mech.update({
         name: cloudMech.name,
         folder: unitFolder ? unitFolder.id : null,
-        img: replaceDefaultResource(mech.img, cloudMech.portrait, frame ? frameToPath(frame.name) : null),
+        img: replaceDefaultResource(mech.img, cloudMech.img?.portrait || cloudMech.portrait, frame ? frameToPath(frame.name) : null),
         permission,
         prototypeToken: {
           name: pilot.system.callsign || cloudMech.name,
           disposition: CONST.TOKEN_DISPOSITIONS.FRIENDLY,
           "texture.src": replaceDefaultResource(
             mech.prototypeToken?.texture?.src,
-            cloudMech.cloud_portrait,
+            cloudMech.img?.cloud_portrait || cloudMech.cloud_portrait,
             frame ? frameToPath(frame.name) : null
           ),
         },
         system: {
           // Universal stuff
           lid: cloudMech.id,
-          "hp.value": cloudMech.current_hp,
-          "overshield.value": cloudMech.overshield,
-          burn: cloudMech.burn,
-          activations: cloudMech.activations,
+          "hp.value": cloudMech.stats?.current?.hp ?? cloudMech.current_hp,
+          "overshield.value": cloudMech.stats?.current?.overshield ?? cloudMech.overshield,
+          burn: cloudMech.stats?.current?.burn ?? cloudMech.burn,
+          activations: cloudMech.stats?.current?.activations ?? cloudMech.activations,
           // custom_counters: cloud_mech. - CC Doesn't have these except on pilots
-          "heat.value": cloudMech.current_heat,
-          "stress.value": cloudMech.current_stress,
-          "structure.value": cloudMech.current_structure,
+          "heat.value": cloudMech.stats?.current?.heat ?? cloudMech.current_heat,
+          "stress.value": cloudMech.stats?.current?.stress ?? cloudMech.current_stress,
+          "structure.value": cloudMech.stats?.current?.structure ?? cloudMech.current_structure,
 
           // Mech stuff
-          overcharge: cloudMech.current_overcharge,
-          "repairs.value": cloudMech.current_repairs,
-          core_active: cloudMech.core_active,
-          core_energy: cloudMech.current_core_energy,
+          overcharge: cloudMech.stats?.current?.overcharge ?? cloudMech.current_overcharge,
+          "repairs.value": cloudMech.stats?.current?.repairCapacity ?? cloudMech.current_repairs,
+          core_active: cloudMech.coreActive ?? cloudMech.core_active,
+          core_energy: cloudMech.stats?.current?.sp ?? cloudMech.current_core_energy,
           // meltdown_timer: - CC doesn't help with this
           notes: cloudMech.notes,
           pilot: pilot.uuid,

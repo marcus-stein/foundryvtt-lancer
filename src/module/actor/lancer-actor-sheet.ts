@@ -36,7 +36,9 @@ const lp = LANCER.log_prefix;
 /**
  * Extend the basic ActorSheetV2 for Lancer actors.
  */
-export class LancerActorSheet<T extends LancerActorType> extends foundry.applications.sheets.ActorSheetV2 {
+const { HandlebarsApplicationMixin } = foundry.applications.api;
+
+export class LancerActorSheet<T extends LancerActorType> extends HandlebarsApplicationMixin(foundry.applications.sheets.ActorSheetV2) {
   // Tracks collapse state between renders (retained for potential future use)
   protected collapse_handler = new CollapseHandler();
 
@@ -50,7 +52,11 @@ export class LancerActorSheet<T extends LancerActorType> extends foundry.applica
     },
   };
 
-  static PARTS = {} as Record<string, any>;
+  static PARTS = { body: { template: "" } } as Record<string, any>;
+
+  protected _configureRenderParts(_options: any): Record<string, any> {
+    return { body: { template: this.template, templates: [] } };
+  }
 
   get actor(): LancerActor {
     return this.document as unknown as LancerActor;
@@ -65,7 +71,7 @@ export class LancerActorSheet<T extends LancerActorType> extends foundry.applica
   }
 
   protected async _renderHTML(context: object, _options: any): Promise<Record<string, HTMLElement>> {
-    const html = await renderTemplate(this.template, context as Record<string, unknown>);
+    const html = await foundry.applications.handlebars.renderTemplate(this.template, context as Record<string, unknown>);
     const wrapper = document.createElement("div");
     wrapper.setAttribute("data-application-part", "body");
     wrapper.innerHTML = html;

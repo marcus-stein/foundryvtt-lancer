@@ -25,22 +25,32 @@ export default class CompconLoginForm extends HandlebarsApplicationMixin(Applica
     const form = this.element.querySelector<HTMLFormElement>("form");
     if (!form) return;
     const formData = new FormDataExtended(form).object as Record<string, string>;
+    const button = this.element.querySelector<HTMLButtonElement>(".done-button");
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Logging in…";
+    }
     try {
       const { Auth } = await import("@aws-amplify/auth");
-      let res = await Auth.signIn(formData.username, formData.password);
-      ui.notifications!.info("Logged in as " + res.attributes.email);
-      populatePilotCache();
-      this.close();
-    } catch (_e1) {
+      // Amplify usernames are case-insensitive; try as-entered first, then lowercase
+      let res: any;
       try {
-        const { Auth } = await import("@aws-amplify/auth");
-        let res = await Auth.signIn(formData.username.toLocaleLowerCase(), formData.password);
-        ui.notifications!.info("Logged in as " + res.attributes.email);
-        populatePilotCache();
-        this.close();
-      } catch (e) {
-        ui.notifications!.error(`Could not log in to Comp/Con: ${(e as any)?.message ?? e}`);
-        console.error(e);
+        res = await Auth.signIn(formData.username, formData.password);
+      } catch (e1) {
+        const lower = formData.username.toLocaleLowerCase();
+        if (lower === formData.username) throw e1; // already lowercase, don't retry
+        res = await Auth.signIn(lower, formData.password);
+      }
+      const email: string = res.attributes?.email ?? res.username;
+      ui.notifications!.info(`Logged in to Comp/Con as ${email}`);
+      await populatePilotCache();
+      this.close();
+    } catch (e) {
+      ui.notifications!.error(`Could not log in to Comp/Con: ${(e as any)?.message ?? e}`);
+      console.error(e);
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-save"></i> Login';
       }
     }
   }

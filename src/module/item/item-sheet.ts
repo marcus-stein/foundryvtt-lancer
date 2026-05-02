@@ -26,7 +26,9 @@ const lp = LANCER.log_prefix;
 /**
  * Extend the basic ItemSheetV2 with Lancer-specific behavior.
  */
-export class LancerItemSheet<T extends LancerItemType> extends foundry.applications.sheets.ItemSheetV2 {
+const { HandlebarsApplicationMixin } = foundry.applications.api;
+
+export class LancerItemSheet<T extends LancerItemType> extends HandlebarsApplicationMixin(foundry.applications.sheets.ItemSheetV2) {
   static DEFAULT_OPTIONS = {
     classes: ["lancer", "sheet", "item"],
     position: { width: 700, height: 700 },
@@ -37,10 +39,11 @@ export class LancerItemSheet<T extends LancerItemType> extends foundry.applicati
     },
   };
 
-  // Placeholder — template is resolved dynamically in _renderHTML
-  static PARTS = {
-    body: { template: "" },
-  };
+  static PARTS = { body: { template: "" } } as Record<string, any>;
+
+  protected _configureRenderParts(_options: any): Record<string, any> {
+    return { body: { template: this.template, templates: [] } };
+  }
 
   get item(): LancerItem {
     return this.document as LancerItem;
@@ -51,7 +54,7 @@ export class LancerItemSheet<T extends LancerItemType> extends foundry.applicati
   }
 
   protected async _renderHTML(context: object, _options: any): Promise<Record<string, HTMLElement>> {
-    const html = await renderTemplate(this.template, context as Record<string, unknown>);
+    const html = await foundry.applications.handlebars.renderTemplate(this.template, context as Record<string, unknown>);
     const wrapper = document.createElement("div");
     wrapper.setAttribute("data-application-part", "body");
     wrapper.innerHTML = html;

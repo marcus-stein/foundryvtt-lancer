@@ -252,14 +252,49 @@ export interface PackedPilotData {
     overcharge_uses: 0;
     core_uses: 0;
   };
-  loadout?: PackedPilotLoadoutData;
-  loadouts?: PackedPilotLoadoutData[];
+  loadout?: PackedPilotLoadoutData; // v2
+  loadouts?: PackedPilotLoadoutData[]; // v3
+  active_index?: number; // v3
   brews: string[];
   core_bonuses: string[];
   factionID: string;
   quirk: string;
   current_hp: number;
   resistances?: string[];
+  // v3 additions
+  img?: {
+    portrait: string;
+    cloud_portrait: string;
+  };
+  stats?: {
+    stats: any;
+    max: any;
+    current: any;
+    stat_version: number;
+  };
+  counters?: {
+    counter_data: PackedCounterSaveData[];
+    custom_counters: PackedCounterData[];
+  };
+  statuses?: string[];
+  customStatuses?: any[];
+  cover?: string;
+  mounted?: boolean;
+  overwatch?: boolean;
+  braced?: boolean;
+  prepared?: boolean;
+  coreActive?: boolean;
+  corePower?: boolean;
+  aiControl?: boolean;
+  isInSelfDestruct?: boolean;
+  reactorDestroyed?: boolean;
+  isDead?: boolean;
+  combatActions?: any;
+  round?: number;
+  turn?: number;
+  action?: number;
+  usedActions?: any[];
+  timed_effects?: any[];
 }
 
 export interface PackedPilotLoadoutData {
@@ -341,6 +376,42 @@ export interface PackedMechData {
   reactor_destroyed: boolean;
   destroyed: boolean;
   defeat: string;
+
+  // v3 additions
+  frameData?: any; // Full frame data from COMP/CON
+  img?: {
+    portrait: string;
+    cloud_portrait: string;
+  };
+  stats?: {
+    stats: any;
+    max: any;
+    current: any;
+    stat_version: number;
+  };
+  counters?: {
+    counter_data: PackedCounterSaveData[];
+    custom_counters: PackedCounterData[];
+  };
+  customStatuses?: any[];
+  cover?: string;
+  mounted?: boolean;
+  overwatch?: boolean;
+  braced?: boolean;
+  prepared?: boolean;
+  coreActive?: boolean;
+  corePower?: boolean;
+  aiControl?: boolean;
+  isInSelfDestruct?: boolean;
+  reactorDestroyed?: boolean;
+  isDead?: boolean;
+  combatActions?: any;
+  combat_history?: any;
+  round?: number;
+  turn?: number;
+  action?: number;
+  usedActions?: any[];
+  timed_effects?: any[];
 }
 
 export interface PackedMechLoadoutData {

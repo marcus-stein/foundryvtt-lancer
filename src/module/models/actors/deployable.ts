@@ -87,6 +87,15 @@ export class DeployableModel extends LancerDataModel<DeployableSchema, Actor.Imp
       // correctly later.
       delete data.hp;
     }
+    if (data.stats) {
+      const s = data.stats;
+      if (!Number.isFinite(s.armor)) s.armor = 0;
+      if (!Number.isFinite(s.edef)) s.edef = 10;
+      if (!Number.isFinite(s.evasion)) s.evasion = 10;
+      if (!Number.isFinite(s.heatcap)) s.heatcap = 0;
+      if (!Number.isFinite(s.save)) s.save = 10;
+      if (!Number.isFinite(s.speed)) s.speed = 0;
+    }
     if (data.stats?.size !== undefined) {
       // Sizes of 1 and up must be integer values
       if (data.stats?.size >= 1.0) {
@@ -111,14 +120,14 @@ export function unpackDeployableData(data: PackedDeployableData): DeepPartial<So
     tags: data.tags?.map(unpackTag),
     activation: data.activation,
     stats: {
-      armor: data.armor,
-      edef: data.edef,
-      evasion: data.evasion,
-      heatcap: data.heatcap,
+      armor: Number.isFinite(data.armor) ? data.armor : 0,
+      edef: Number.isFinite(data.edef) ? data.edef : 10,
+      evasion: Number.isFinite(data.evasion) ? data.evasion : 10,
+      heatcap: Number.isFinite(data.heatcap) ? data.heatcap : 0,
       hp: fixCCFormula(data.hp?.toString() || "5"),
-      save: data.save,
-      size: data.size,
-      speed: data.speed,
+      save: Number.isFinite(data.save) ? data.save : 10,
+      size: Number.isFinite(data.size) ? data.size : 0.5,
+      speed: Number.isFinite(data.speed) ? data.speed : 0,
     },
     activations: 0,
     avail_mounted: undefined,

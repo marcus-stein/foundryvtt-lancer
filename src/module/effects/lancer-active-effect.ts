@@ -117,14 +117,40 @@ export class LancerActiveEffect<
       effects: [] as [number, LancerActiveEffect][],
     };
 
-    // Iterate over active effects, classifying them into categories
+    // Deduplicate effects from the same source item — each origin UUID gets one display entry per category.
+    // Effects without an origin are always shown individually.
+    const seenOrigins = {
+      passives: new Set<string>(),
+      inherited: new Set<string>(),
+      disabled: new Set<string>(),
+      passthrough: new Set<string>(),
+    };
+
     let index = 0;
     for (let e of actor.allApplicableEffects()) {
       // e._getSourceName(); // Trigger a lookup for the source name
-      if (!e.affectsUs()) passthrough.effects.push([index, e]);
-      else if (e.disabled) disabled.effects.push([index, e]);
-      else if (e.flags[game.system.id]?.deep_origin) inherited.effects.push([index, e]);
-      else passives.effects.push([index, e]);
+      const origin = e.origin ?? null;
+      if (!e.affectsUs()) {
+        if (!origin || !seenOrigins.passthrough.has(origin)) {
+          passthrough.effects.push([index, e]);
+          if (origin) seenOrigins.passthrough.add(origin);
+        }
+      } else if (e.disabled) {
+        if (!origin || !seenOrigins.disabled.has(origin)) {
+          disabled.effects.push([index, e]);
+          if (origin) seenOrigins.disabled.add(origin);
+        }
+      } else if (e.flags[game.system.id]?.deep_origin) {
+        if (!origin || !seenOrigins.inherited.has(origin)) {
+          inherited.effects.push([index, e]);
+          if (origin) seenOrigins.inherited.add(origin);
+        }
+      } else {
+        if (!origin || !seenOrigins.passives.has(origin)) {
+          passives.effects.push([index, e]);
+          if (origin) seenOrigins.passives.add(origin);
+        }
+      }
       index++;
     }
 
@@ -295,8 +321,8 @@ export class LancerActiveEffect<
 }
 
 // To support more effects, we add several effect types.
-export const AE_MODE_SET_JSON = 11 as CONST.ACTIVE_EFFECT_MODES;
-export const AE_MODE_APPEND_JSON = 12 as CONST.ACTIVE_EFFECT_MODES;
+export const AE_MODE_SET_JSON = 11 as unknown as string;
+export const AE_MODE_APPEND_JSON = 12 as unknown as string;
 
 const _json_cache = {} as Record<string, any>;
 Hooks.on("applyActiveEffect", function (actor, change) {

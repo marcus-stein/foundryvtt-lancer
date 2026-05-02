@@ -219,6 +219,12 @@ export function registerHandlebarsHelpers() {
   });
   Handlebars.registerHelper("stringify", (x: any) => JSON.stringify(x));
 
+  // Block helper: marks the <option> whose value matches the argument as selected.
+  // Was provided by Foundry v13 but removed in v14.
+  Handlebars.registerHelper("select", function (this: any, selected: string, options: Handlebars.HelperOptions) {
+    return options.fn(this).replace(`value="${selected}"`, `value="${selected}" selected`);
+  });
+
   Handlebars.registerHelper("textarea-card", large_textbox_card);
 
   // ------------------------------------------------------------------------

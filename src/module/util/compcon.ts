@@ -3,13 +3,22 @@ import type { PackedPilotData } from "./unpacking/packed-types";
 
 // we only cache the id, cloud ids, and name; we're going to fetch all other data on user input
 // the point of the cache is not have the pilot actor window to wait for network calls
-// this does mean that the GM needs to refresh foundry to clear this cache if they add pilots
-// (they could also re-login, we initiate a cache refresh there)
 
 let _cache: CachedCloudPilot[] = [];
 
 export function cleanCloudOwnerID(str: string): string {
   return str.substring(0, 10) == "us-east-1:" ? str.substring(10) : str;
+}
+
+/** Returns the currently signed-in Comp/Con email, or null if not logged in. */
+export async function getLoggedInUser(): Promise<string | null> {
+  try {
+    const { Auth } = await import("@aws-amplify/auth");
+    const user = await Auth.currentAuthenticatedUser();
+    return user?.attributes?.email ?? user?.username ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function populatePilotCache(): Promise<CachedCloudPilot[]> {
@@ -26,16 +35,31 @@ export async function populatePilotCache(): Promise<CachedCloudPilot[]> {
     cacheControl: "no-cache",
     // Filter out deleted pilots (tagged with "delete" or "s3-remove-flag"), we want "active"
   }).then(result => {
+    console.log(`Found ${result.results.length} pilot files in cloud storage`);
     return result.results.filter(x => x.key?.endsWith("--active"));
   });
 
-  const data = (await Promise.all(res.map(obj => (obj.key ? fetchPilot(obj.key) : null)))).map(
-    x => x
-  ) as Array<PackedPilotData>;
+  console.log(`After filtering for active pilots: ${res.length} remaining`);
+  res.forEach(pilot => console.log(`  - ${pilot.key}`));
+
+  const settled = await Promise.allSettled(res.map(obj => (obj.key ? fetchPilot(obj.key) : null)));
+  const fulfilled = settled.filter((r): r is PromiseFulfilledResult<PackedPilotData> => r.status === "fulfilled" && r.value !== null);
+  const rejected = settled.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+  
+  console.log(`Pilot fetch results: ${fulfilled.length} successful, ${rejected.length} failed`);
+  if (rejected.length > 0) {
+    console.log("Failed pilot fetches:");
+    rejected.forEach((r, i) => console.log(`  - ${res[i]?.key}: ${r.reason}`));
+  }
+
+  const data = fulfilled.map(r => r.value);
+
+  console.log(`Processing ${data.length} successfully fetched pilots:`);
   data.forEach(pilot => {
     pilot.mechs = [];
-    pilot.cloudOwnerID = pilot.cloudOwnerID != null ? cleanCloudOwnerID(pilot.cloudOwnerID) : ""; // only clean the CloudOwnerID if its available
-    pilot.cloudID = pilot.cloudID != null ? pilot.cloudID : pilot.id; // if cloudID is present in the data being returned, use it. Otherwise, use the ID for selection purposes
+    pilot.cloudOwnerID = pilot.cloudOwnerID != null ? cleanCloudOwnerID(pilot.cloudOwnerID) : "";
+    pilot.cloudID = pilot.cloudID != null ? pilot.cloudID : pilot.id;
+    console.log(`  - ${pilot.name} (${pilot.id})`);
   });
   _cache = data;
   return data;

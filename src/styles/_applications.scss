@@ -7,6 +7,25 @@
 @use "applications/stabilize";
 @use "applications/rich-editor";
 
+// These flex-scroll rules must be unlayered to win over Foundry's unlayered CSS.
+.application.lancer .window-content > [data-application-part] {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  > *:not(.scroll-body) {
+    flex-shrink: 0;
+  }
+}
+
+.scroll-body {
+  overflow-y: auto;
+  flex: 1 1 0;
+  min-height: 0;
+  margin-top: 8px;
+}
+
 @layer lancer.applications {
   /* ===== RULES FOR LANCER APPLICATIONS ===== */
   .application.lancer,
@@ -15,6 +34,10 @@
     .window-content {
       width: 100%;
       height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       background: unset;
       background-color: var(--background-color);
       color: var(--dark-text);
@@ -85,12 +108,6 @@
       --checkbox-disabled-color: var(--dark-gray-color);
       --checkbox-background-color: var(--dark-gray-color);
     }
-  }
-
-  .scroll-body {
-    overflow-y: auto;
-    margin-top: 8px;
-    height: calc(100% - 168px);
   }
 
   .monospace {

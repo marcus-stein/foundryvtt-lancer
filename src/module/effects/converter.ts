@@ -35,44 +35,44 @@ export function frameInnateEffect(frame: LancerFRAME) {
   ];
   let changes = keys.map(key => ({
     key: `system.${key}`,
-    mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+    type: "override",
     priority: FRAME_STAT_PRIORITY,
     value: frame.system.stats[key],
   }));
   // The weirder ones
   changes.push({
     key: "system.hp.max",
-    mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+    type: "override",
     priority: FRAME_STAT_PRIORITY,
     value: frame.system.stats.hp,
   });
   changes.push({
     key: "system.structure.max",
-    mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+    type: "override",
     priority: FRAME_STAT_PRIORITY,
     value: frame.system.stats.structure,
   });
   changes.push({
     key: "system.stress.max",
-    mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+    type: "override",
     priority: FRAME_STAT_PRIORITY,
     value: frame.system.stats.stress,
   });
   changes.push({
     key: "system.heat.max",
-    mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+    type: "override",
     priority: FRAME_STAT_PRIORITY,
     value: frame.system.stats.heatcap,
   });
   changes.push({
     key: "system.repairs.max",
-    mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+    type: "override",
     priority: FRAME_STAT_PRIORITY,
     value: frame.system.stats.repcap,
   });
   changes.push({
     key: "system.loadout.sp.max",
-    mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+    type: "override",
     priority: FRAME_STAT_PRIORITY,
     value: frame.system.stats.sp,
   });
@@ -100,98 +100,98 @@ export function pilotInnateEffects(pilot: LancerActor): LancerActiveEffect[] {
       changes: [
         // HASE
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+          type: "override",
           key: "system.hull",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.hull.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.hp.max",
           priority: PILOT_STAT_PRIORITY,
           value: (2 * pilot.system.hull + pilot.system.grit).toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.repairs.max",
           priority: PILOT_STAT_PRIORITY,
           value: Math.floor(pilot.system.hull / 2).toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+          type: "override",
           key: "system.agi",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.agi.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.evasion",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.agi.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.speed",
           priority: PILOT_STAT_PRIORITY,
           value: Math.floor(pilot.system.agi / 2).toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+          type: "override",
           key: "system.sys",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.sys.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.edef",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.sys.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.tech_attack",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.sys.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.save",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.grit.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.loadout.sp.max",
           priority: PILOT_STAT_PRIORITY,
           value: (Math.floor(pilot.system.sys / 2) + pilot.system.grit).toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+          type: "override",
           key: "system.eng",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.eng.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.heat.max",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.eng.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          type: "add",
           key: "system.loadout.limited_bonus",
           priority: PILOT_STAT_PRIORITY,
           value: Math.floor(pilot.system.eng / 2).toString(),
         },
         // More basic pilot info
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+          type: "override",
           key: "system.grit",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.grit.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+          type: "override",
           key: "system.level",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.level.toString(),
@@ -217,13 +217,13 @@ export function pilotInnateEffects(pilot: LancerActor): LancerActiveEffect[] {
       changes: [
         // Much simpler
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+          type: "override",
           key: "system.grit",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.grit.toString(),
         },
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+          type: "override",
           key: "system.level",
           priority: PILOT_STAT_PRIORITY,
           value: pilot.system.level.toString(),
@@ -259,7 +259,7 @@ export function npcInnateEffects(npc: LancerActor): LancerActiveEffect[] {
       changes: [
         // Much simpler
         {
-          mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+          type: "override",
           key: "system.grit",
           priority: PILOT_STAT_PRIORITY,
           value: npc.system.tier.toString(),
@@ -289,7 +289,7 @@ export function statusInnateEffect(status: LancerSTATUS) {
   let changes = [
     {
       key: `system.statuses.${status.system.lid}`,
-      mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+      type: "override",
       priority: EFFECT_STAT_PRIORITY,
     },
   ];
@@ -358,49 +358,18 @@ const npc_keys: Array<ClassStatKey> = [
 ];
 
 // Make a bonus appropriate to the provided stat key
-function makeNpcBonus(
-  stat: ClassStatKey,
-  value: number,
-  mode: ActiveEffect.Implementation["changes"][0]["mode"],
-  priority: number
-) {
+function makeNpcBonus(stat: ClassStatKey, value: number, type: string, priority: number) {
   switch (stat) {
     case "hp":
-      return {
-        key: "system.hp.max",
-        mode,
-        priority,
-        value,
-      };
+      return { key: "system.hp.max", type, priority, value };
     case "heatcap":
-      return {
-        key: "system.heat.max",
-        mode,
-        priority,
-        value,
-      };
+      return { key: "system.heat.max", type, priority, value };
     case "structure":
-      return {
-        key: "system.structure.max",
-        mode,
-        priority,
-        value,
-      };
+      return { key: "system.structure.max", type, priority, value };
     case "stress":
-      return {
-        key: "system.stress.max",
-        mode,
-        priority,
-        value,
-      };
+      return { key: "system.stress.max", type, priority, value };
     default:
-      // All the rest trivially handled
-      return {
-        key: `system.${stat}`,
-        mode,
-        priority,
-        value,
-      };
+      return { key: `system.${stat}`, type, priority, value };
   }
 }
 
@@ -410,7 +379,7 @@ export function npcClassInnateEffect(class_: LancerNPC_CLASS) {
   let bs = class_.system.base_stats[tier - 1];
 
   let changes = npc_keys.map(key =>
-    makeNpcBonus(key, bs[key], CONST.ACTIVE_EFFECT_MODES.OVERRIDE, FRAME_STAT_PRIORITY)
+    makeNpcBonus(key, bs[key], "override", FRAME_STAT_PRIORITY)
   );
 
   return {
@@ -430,7 +399,7 @@ export function npcFeatureBonusEffects(feature: LancerNPC_FEATURE) {
   for (let key of npc_keys) {
     let value = feature.system.bonus[key];
     if (value !== null) {
-      changes.push(makeNpcBonus(key, value, CONST.ACTIVE_EFFECT_MODES.ADD, BONUS_STAT_PRIORITY));
+      changes.push(makeNpcBonus(key, value, "add", BONUS_STAT_PRIORITY));
     }
   }
   if (changes.length) {
@@ -454,7 +423,7 @@ export function npcFeatureOverrideEffects(feature: LancerNPC_FEATURE) {
   for (let key of npc_keys) {
     let value = feature.system.override[key];
     if (value !== null) {
-      changes.push(makeNpcBonus(key, value, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, FEATURE_OVERRIDE_PRIORITY));
+      changes.push(makeNpcBonus(key, value, "override", FEATURE_OVERRIDE_PRIORITY));
     }
   }
   if (changes.length) {
@@ -507,7 +476,7 @@ export function convertBonus(item: LancerItem, name: string, bonus: BonusData) {
 
   // Broadly speaking, we ignore overwrite and replace, as they are largely unused
   // However, if one or the other is set, we do tweak our AE mode as a halfhearted compatibility attempt
-  let mode = bonus.replace || bonus.overwrite ? CONST.ACTIVE_EFFECT_MODES.OVERRIDE : CONST.ACTIVE_EFFECT_MODES.ADD;
+  let mode = bonus.replace || bonus.overwrite ? "override" : "add";
   let priority = bonus.replace || bonus.overwrite ? 50 : BONUS_STAT_PRIORITY;
   // Attempt to replace special keys in bonus values. Supported keys are {ll} and {grit}. These
   // require the item to belong to either a pilot or an active mech.
@@ -612,7 +581,7 @@ export function convertBonus(item: LancerItem, name: string, bonus: BonusData) {
     case "cheap_struct":
       target_type = EntryType.MECH;
       changes.push({
-        mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+        type: "override",
         value: "1",
         priority,
         key: "system.structure_repair_cost",
@@ -621,7 +590,7 @@ export function convertBonus(item: LancerItem, name: string, bonus: BonusData) {
     case "cheap_stress":
       target_type = EntryType.MECH;
       changes.push({
-        mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE,
+        type: "override",
         value: "1",
         priority,
         key: "system.stress_repair_cost",
@@ -631,7 +600,7 @@ export function convertBonus(item: LancerItem, name: string, bonus: BonusData) {
       target_type = EntryType.MECH;
       // Hardwire overcharge to use override mode
       // Heatfall doesn't have overwrite or replace set in lancer-data, but that's how it needs to work.
-      changes.push({ mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE, value, priority, key: "system.overcharge_sequence" });
+      changes.push({ type: "override", value, priority, key: "system.overcharge_sequence" });
       break;
     case "limited_bonus":
       target_type = EntryType.MECH;

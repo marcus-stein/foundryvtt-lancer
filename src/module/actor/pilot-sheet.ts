@@ -1,12 +1,13 @@
 import { LANCER } from "../config";
 const lp = LANCER.log_prefix;
+import * as lancer_data from "@massif/lancer-data";
 import { LancerActorSheet } from "./lancer-actor-sheet";
 import type { HelperOptions } from "handlebars";
 import { buildCounterHeader, buildCounterHTML } from "../helpers/item";
 import { ref_params, resolve_ref_element } from "../helpers/refs";
 import { inc_if, resolveDotpath } from "../helpers/commons";
 import { LancerActor, type LancerMECH, type LancerPILOT } from "./lancer-actor";
-import { fetchPilotViaCache, fetchPilotViaShareCode, pilotCache } from "../util/compcon";
+import { fetchPilotViaCache, fetchPilotViaShareCode, getLoggedInUser, pilotCache, populatePilotCache } from "../util/compcon";
 import type { LancerFRAME } from "../item/lancer-item";
 import { clicker_num_input } from "../helpers/actor";
 import type { ResolvedDropData } from "../helpers/dragdrop";
@@ -16,6 +17,65 @@ import { importCC } from "./import";
 
 const shareCodeMatcher = /^[A-Z0-9\d]{6}$/g;
 const COUNTER_MAX = 8;
+
+type StatLine = { label: string; value: number; replace: boolean };
+
+function buildPilotStatTooltips(actor: LancerActor): Record<string, string> {
+  if (!actor.is_pilot()) return {};
+  const sys = actor.system;
+  const rules = lancer_data.rules;
+
+  const breakdowns: Record<string, { title: string; lines: StatLine[] }> = {
+    "system.hp.max": {
+      title: "Max HP",
+      lines: [
+        { label: "Base", value: rules.base_pilot_hp, replace: false },
+        { label: "Grit", value: sys.grit, replace: false },
+      ],
+    },
+    "system.armor": { title: "Armor", lines: [] },
+    "system.evasion": { title: "Evasion", lines: [] },
+    "system.edef": { title: "E-Defense", lines: [] },
+    "system.speed": { title: "Speed", lines: [] },
+    "system.save": {
+      title: "Save Target",
+      lines: [
+        { label: "Base", value: rules.base_pilot_save_target, replace: false },
+        { label: "Grit", value: sys.grit, replace: false },
+      ],
+    },
+    "system.sensor_range": {
+      title: "Sensor Range",
+      lines: [{ label: "Base", value: rules.base_pilot_sensors, replace: false }],
+    },
+  };
+
+  for (const e of actor.allApplicableEffects()) {
+    if (!e.affectsUs()) continue;
+    const sourceName = e.name ?? "Unknown";
+    for (const change of e.changes) {
+      const bd = breakdowns[change.key];
+      if (!bd) continue;
+      const value = Number(change.value);
+      if (isNaN(value) || value === 0) continue;
+      const isOverride = (change as any).type === "override";
+      bd.lines.push({ label: sourceName, value, replace: isOverride });
+    }
+  }
+
+  const result: Record<string, string> = {};
+  for (const [key, { title, lines }] of Object.entries(breakdowns)) {
+    if (!lines.length) continue;
+    const statKey = key.replace("system.", "").replace(".", "_");
+    const lineStrings = lines.map(l => {
+      if (l.replace) return `${l.value} ${l.label}`;
+      const sign = l.label === "Base" ? "" : l.value >= 0 ? "+" : "";
+      return `${sign}${l.value} ${l.label}`;
+    });
+    result[statKey] = `<b>${title}</b><br>${lineStrings.join("<br>")}`;
+  }
+  return result;
+}
 
 /**
  * Extend the basic ActorSheet
@@ -27,7 +87,7 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
    */
   static DEFAULT_OPTIONS = {
     classes: ["lancer", "sheet", "actor", "pilot"],
-    position: { width: 900, height: 800 },
+    position: { width: 1050, height: 800 },
     tag: "form" as const,
     form: {
       submitOnChange: true,
@@ -55,54 +115,86 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
         pilot.update({ "system.cloud_id": (evt.target as HTMLSelectElement).value });
       });
 
+      // Refresh pilot list from Comp/Con
+      $html.find(".cloud-refresh-pilots").on("click", async ev => {
+        ev.stopPropagation();
+        const btn = ev.currentTarget as HTMLButtonElement;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing…';
+        try {
+          const pilots = await populatePilotCache();
+          if (pilots.length === 0) {
+            ui.notifications!.warn("No pilots found — are you logged in to Comp/Con?");
+          } else {
+            ui.notifications!.info(`Pilot list refreshed: ${pilots.length} pilot${pilots.length !== 1 ? "s" : ""} found.`);
+          }
+        } catch (e) {
+          ui.notifications!.error(`Failed to refresh pilot list: ${(e as any)?.message ?? e}`);
+        }
+        this.render();
+      });
+
       // Cloud download
       let download = $html.find('.cloud-control[data-action*="download"]');
-      if (pilot.system.cloud_id) {
-        download.on("click", async ev => {
-          ev.stopPropagation();
+      download.on("click", async ev => {
+        ev.stopPropagation();
+        const cloudId = pilot.system.cloud_id;
+        if (!cloudId) {
+          ui.notifications!.warn("No pilot selected. Choose one from the dropdown or enter a share code.");
+          return;
+        }
 
-          let raw_pilot_data = null;
-          if (pilot.system.cloud_id!.match(shareCodeMatcher)) {
-            ui.notifications!.info("Importing character from share code...");
-            console.log(`Attempting import with share code: ${pilot.system.cloud_id}`);
+        let raw_pilot_data = null;
+        if (cloudId.match(shareCodeMatcher)) {
+          ui.notifications!.info("Importing character from share code...");
+          console.log(`Attempting import with share code: ${cloudId}`);
+          try {
+            raw_pilot_data = await fetchPilotViaShareCode(cloudId);
+          } catch (error) {
+            ui.notifications!.error("Error importing from share code. Share code may need to be refreshed.");
+            console.error(`Failed import with share code ${cloudId}, error:`, error);
+            return;
+          }
+        } else {
+          ui.notifications!.info("Importing character from COMP/CON account...");
+          const cachedPilot = pilotCache().find(p => p.cloudID == cloudId);
+          if (cachedPilot != undefined) {
             try {
-              raw_pilot_data = await fetchPilotViaShareCode(pilot.system.cloud_id!);
+              raw_pilot_data = await fetchPilotViaCache(cachedPilot);
             } catch (error) {
-              ui.notifications!.error("Error importing from share code. Share code may need to be refreshed.");
-              console.error(`Failed import with share code ${pilot.system.cloud_id}, error:`, error);
-              return;
-            }
-          } else if (pilot.system.cloud_id) {
-            ui.notifications!.info("Importing character from COMP/CON account...");
-            const cachedPilot = pilotCache().find(p => p.cloudID == pilot.system.cloud_id);
-            if (cachedPilot != undefined) {
-              try {
-                raw_pilot_data = await fetchPilotViaCache(cachedPilot);
-              } catch (error) {
-                ui.notifications!.error(
-                  "Failed to import from COMP/CON account. Try refreshing the page to reload pilot list."
-                );
-                console.error(`Failed to import vaultID ${pilot.system.cloud_id} via pilot list, error:`, error);
-                return;
-              }
-            } else {
-              ui.notifications!.error(
-                "Failed to import from COMP/CON account. Try refreshing the page to reload pilot list"
-              );
-              console.error(`Failed to find pilot in cache, vaultID: ${pilot.system.cloud_id}`);
+              ui.notifications!.error("Failed to fetch pilot data from Comp/Con. Try refreshing the pilot list.");
+              console.error(`Failed to import vaultID ${cloudId} via pilot list, error:`, error);
               return;
             }
           } else {
-            ui.notifications!.error(
-              "Could not find character to import! No pilot selected via dropdown and no share code entered."
-            );
-            return;
+            // Pilot not in cache — refresh and retry once
+            ui.notifications!.info("Pilot not in cached list. Refreshing pilot list from Comp/Con...");
+            try {
+              await populatePilotCache();
+            } catch (e) {
+              ui.notifications!.error("Could not refresh pilot list — are you logged in to Comp/Con?");
+              return;
+            }
+            const retryPilot = pilotCache().find(p => p.cloudID == cloudId);
+            if (!retryPilot) {
+              ui.notifications!.error(
+                `Pilot ID "${cloudId}" not found in your Comp/Con account after refresh. ` +
+                `Check that the pilot is marked active in Comp/Con, or log in again via Settings → COMP/CON Login.`
+              );
+              console.error(`Failed to find pilot in cache after refresh, vaultID: ${cloudId}`);
+              return;
+            }
+            try {
+              raw_pilot_data = await fetchPilotViaCache(retryPilot);
+            } catch (error) {
+              ui.notifications!.error("Failed to fetch pilot data from Comp/Con. Try refreshing the pilot list.");
+              console.error(`Failed to import vaultID ${cloudId} after refresh, error:`, error);
+              return;
+            }
           }
-          await importCC(this.actor as LancerPILOT, raw_pilot_data);
-        });
-      } else {
-        download.addClass("disabled-cloud");
-      }
+        }
+        await importCC(this.actor as LancerPILOT, raw_pilot_data);
+      });
 
       // JSON Import
       const jsonImport = $html.find("input#pilot-json-import")[0] as HTMLInputElement | undefined;
@@ -179,7 +271,8 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
   async _prepareContext(opts: any): Promise<object> {
     const data: any = await super._prepareContext(opts);
 
-    data.compConPilotList = pilotCache()
+    const cache = pilotCache();
+    data.compConPilotList = cache
       .sort((p1, p2) => {
         if (p1.callsign < p2.callsign) return -1;
         if (p1.callsign > p2.callsign) return 1;
@@ -194,6 +287,10 @@ export class LancerPilotSheet extends LancerActorSheet<EntryType.PILOT> {
         },
         {} as Record<string, string>
       );
+
+    data.cloudUser = await getLoggedInUser();
+    data.cloudPilotCount = cache.length;
+    data.stat_tooltips = buildPilotStatTooltips(this.actor);
 
     return data;
   }

@@ -19,75 +19,93 @@ declare module "fvtt-types/configuration" {
   }
 }
 
-export class LancerActionManager extends Application {
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+export class LancerActionManager extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEF_LEFT = 600;
   static DEF_TOP = 20;
   static enabled: boolean;
 
   target: LancerActor | null = null;
 
-  constructor(...args: any) {
-    super(...args);
-  }
+  static DEFAULT_OPTIONS: foundry.applications.api.ApplicationV2.Configuration = {
+    id: "action-manager",
+    classes: ["clipped", "card"],
+    window: { frame: false },
+    position: { width: 310, height: 70, left: LancerActionManager.DEF_LEFT, top: LancerActionManager.DEF_TOP },
+  };
+
+  static PARTS = {
+    main: { template: "systems/lancer/templates/window/action_manager.hbs" },
+  };
 
   async init() {
-    // TODO: find the correct place to specify what game.system.id is expected to be
     LancerActionManager.enabled =
       game.settings.get(game.system.id, LANCER.setting_actionTracker).showHotbar &&
       !game.settings.get("core", "noCanvas");
     if (LancerActionManager.enabled) {
-      this.loadUserPos();
       await this.updateControlledToken();
-      this.render(true);
+      this.render({ force: true });
     }
   }
 
-  /** @override */
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      template: `systems/${game.system.id}/templates/window/action_manager.hbs`,
-      width: 310,
-      height: 70,
-      left: LancerActionManager.DEF_LEFT,
-      top: LancerActionManager.DEF_TOP,
-      scale: 1,
-      popOut: false,
-      minimizable: false,
-      resizable: false,
-      title: "action-manager",
-    });
-  }
-
-  /** @override */
-  getData(_options = {}) {
-    const data = {
-      position: this.position,
-      name: this.target && this.target.name.toLocaleUpperCase(),
+  async _prepareContext(_options: any): Promise<object> {
+    return {
+      name: this.target?.name.toLocaleUpperCase() ?? null,
       actions: this.getActions(),
       clickable: game.user?.isGM || game.settings.get(game.system.id, LANCER.setting_actionTracker).allowPlayers,
     };
-    return data;
+  }
+
+  async _onFirstRender(_context: object, _options: any): Promise<void> {
+    this._loadUserPos();
+  }
+
+  async _onRender(_context: object, _options: any): Promise<void> {
+    const hasActions = !!this.getActions();
+    this.element.classList.toggle("hidden", !hasActions);
+    this.element.classList.toggle("noclick", !this.canMod());
+
+    this._initDrag();
+
+    this.element.querySelector("#action-manager-reset")?.addEventListener("click", e => {
+      e.preventDefault();
+      if (this.canMod()) {
+        this._resetActions();
+      } else {
+        console.log(`${game.user?.name} :: Users currently not allowed to reset actions through action manager.`);
+      }
+    });
+
+    this.element.querySelectorAll<HTMLElement>("a.action[data-action]").forEach(el => {
+      el.addEventListener("click", e => {
+        e.preventDefault();
+        if (this.canMod()) {
+          const action = (e.currentTarget as HTMLElement).dataset.action;
+          action && this.target && toggleAction(this.target, action as ActionType);
+        } else {
+          console.log(`${game.user?.name} :: Users currently not allowed to toggle actions through action manager.`);
+        }
+      });
+    });
+
+    this._loadTooltips();
   }
 
   // DATA BINDING
-  /**
-   * Get proxy for ease of migration when we change over to MM data backing.
-   * @returns actions map.
-   */
   private getActions(): ActionTrackingData | null {
     return this.target ? getActions(this.target) : null;
   }
 
   async reset() {
     await this.close();
-    this.render(true);
+    this.render({ force: true });
   }
 
   async update(_force?: boolean) {
     if (LancerActionManager.enabled) {
-      // console.log("Action Manager updating...");
       await this.updateControlledToken();
-      this.render(true);
+      this.render({ force: true });
     }
   }
 
@@ -117,159 +135,71 @@ export class LancerActionManager extends Application {
     this.target = null;
   }
 
-  /**
-   * Resets actions to their default state.
-   */
-  private async resetActions() {
+  private async _resetActions() {
     if (this.target) {
       console.log("Resetting " + this.target.name);
       modAction(this.target, false);
-
-      // await ChatMessage.create({ user: game.userId, whisper: game.users!.contents.filter(u => u.isGM).map(u => u.id), content: `${this.target.name} has had their actions manually reset.` }, {})
     }
   }
 
-  // UI //
-  /** @override */
-  activateListeners(html: JQuery) {
-    // Enable dragging.
-    this.dragElement(html);
-
-    // Enable reset.
-    html.find("#action-manager-reset").on("click", e => {
-      e.preventDefault();
-      if (this.canMod()) {
-        this.resetActions();
-      } else {
-        console.log(`${game.user?.name} :: Users currently not allowed to reset actions through action manager.`);
-      }
-    });
-
-    // Enable action toggles.
-    html.find("a.action[data-action]").on("click", e => {
-      e.preventDefault();
-      if (this.canMod()) {
-        const action = e.currentTarget.dataset.action;
-        action && this.target && toggleAction(this.target, action as ActionType);
-      } else {
-        console.log(`${game.user?.name} :: Users currently not allowed to toggle actions through action manager.`);
-      }
-    });
-
-    // Enable tooltips.
-    this.loadTooltips();
+  private _loadUserPos() {
+    const pos = game.user?.getFlag(game.system.id, "action-manager")?.pos;
+    if (!pos) return;
+    const newTop = pos.top < 5 || pos.top > window.innerHeight + 5 ? LancerActionManager.DEF_TOP : pos.top;
+    const newLeft = pos.left < 5 || pos.left > window.innerWidth + 5 ? LancerActionManager.DEF_LEFT : pos.left;
+    this.setPosition({ top: newTop, left: newLeft });
   }
 
-  private loadUserPos() {
-    if (!game.user?.getFlag(game.system.id, "action-manager")?.pos) return;
-
-    const pos = game.user.getFlag(game.system.id, "action-manager")!.pos!;
-    const appPos = this.position;
-    return new Promise(resolve => {
-      function loop() {
-        let ele = document.getElementById("action-manager");
-        if (ele) {
-          const newTop = pos.top < 5 || pos.top > window.innerHeight + 5 ? LancerActionManager.DEF_TOP : pos.top;
-          const newLeft = pos.left < 5 || pos.left > window.innerWidth + 5 ? LancerActionManager.DEF_LEFT : pos.left;
-
-          appPos.top = newTop;
-          appPos.left = newLeft;
-          ele.style.top = newTop + "px";
-          ele.style.left = newLeft + "px";
-          resolve(true);
-        } else {
-          setTimeout(loop, 20);
-        }
-      }
-      loop();
-    });
+  private _loadTooltips() {
+    tippy('.action[data-action="protocol"]', { content: "Protocol" });
+    tippy('.action[data-action="full"]', { content: "Full Action" });
+    tippy('.action[data-action="quick"]', { content: "Quick Action" });
+    tippy('.action[data-action="move"]', { content: "Movement Action" });
+    tippy('.action[data-action="reaction"]', { content: "Reaction" });
+    tippy('.action[data-action="free"]', { content: "Free Actions" });
   }
 
-  private loadTooltips() {
-    tippy('.action[data-action="protocol"]', {
-      content: "Protocol",
-    });
-    tippy('.action[data-action="full"]', {
-      content: "Full Action",
-    });
-    tippy('.action[data-action="quick"]', {
-      content: "Quick Action",
-    });
-    tippy('.action[data-action="move"]', {
-      content: "Movement Action",
-    });
-    tippy('.action[data-action="reaction"]', {
-      content: "Reaction",
-    });
-    tippy('.action[data-action="free"]', {
-      content: "Free Actions",
-    });
-  }
+  private _initDrag(): void {
+    const self = this;
+    const dragHandle = this.element.querySelector<HTMLElement>("#action-manager-drag");
+    if (!dragHandle) return;
 
-  // HELPERS //
-
-  private dragElement(html: JQuery) {
-    const appPos = this.position;
-    html.find("#action-manager-drag").on("mousedown", ev => {
+    dragHandle.addEventListener("mousedown", ev => {
       ev.preventDefault();
-      ev = ev || window.event;
+      const hud = document.getElementById("action-manager")!;
+      const marginLeft = parseInt(getComputedStyle(hud).marginLeft) || 0;
+      const marginTop = parseInt(getComputedStyle(hud).marginTop) || 0;
 
-      let hud = $(document.body).find("#action-manager");
-      let marginLeft = parseInt(hud.css("marginLeft").replace("px", ""));
-      let marginTop = parseInt(hud.css("marginTop").replace("px", ""));
+      let pos1 = 0, pos2 = 0, pos3 = ev.clientX, pos4 = ev.clientY;
 
-      dragElement(document.getElementById("action-manager")!);
-      let pos1 = 0,
-        pos2 = 0,
-        pos3 = 0,
-        pos4 = 0;
-
-      function dragElement(elmnt: HTMLElement) {
-        elmnt.onmousedown = dragMouseDown;
-
-        function dragMouseDown(e: MouseEvent) {
-          e = e || window.event;
-          e.preventDefault();
-          pos3 = e.clientX;
-          pos4 = e.clientY;
-
-          document.onmouseup = closeDragElement;
-          document.onmousemove = elementDrag;
-        }
-
-        function elementDrag(e: MouseEvent) {
-          e = e || window.event;
-          e.preventDefault();
-          // calculate the new cursor position:
-          pos1 = pos3 - e.clientX;
-          pos2 = pos4 - e.clientY;
-          pos3 = e.clientX;
-          pos4 = e.clientY;
-          // set the element's new position:
-          elmnt.style.top = elmnt.offsetTop - pos2 - marginTop + "px";
-          elmnt.style.left = elmnt.offsetLeft - pos1 - marginLeft + "px";
-        }
-
-        function closeDragElement() {
-          // stop moving when mouse button is released:
-          elmnt.onmousedown = null;
-          document.onmouseup = null;
-          document.onmousemove = null;
-          let xPos = elmnt.offsetLeft - pos1 > window.innerWidth ? window.innerWidth : elmnt.offsetLeft - pos1;
-          let yPos =
-            elmnt.offsetTop - pos2 > window.innerHeight - 20 ? window.innerHeight - 100 : elmnt.offsetTop - pos2;
-          xPos = xPos < 8 ? 0 : xPos - 8;
-          yPos = yPos < 8 ? 0 : yPos - 8;
-          if (xPos != elmnt.offsetLeft - pos1 || yPos != elmnt.offsetTop - pos2) {
-            elmnt.style.top = yPos + "px";
-            elmnt.style.left = xPos + "px";
-          }
-          console.log(`Action Manager | CACHING: ${xPos} || ${yPos}.`);
-          game.user?.update({ flags: { lancer: { "action-manager": { pos: { top: yPos, left: xPos } } } } });
-          appPos.top = yPos;
-          appPos.left = xPos;
-        }
+      function elementDrag(e: MouseEvent) {
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        hud.style.top = (hud.offsetTop - pos2 - marginTop) + "px";
+        hud.style.left = (hud.offsetLeft - pos1 - marginLeft) + "px";
       }
+
+      function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+        let xPos = hud.offsetLeft - pos1 > window.innerWidth ? window.innerWidth : hud.offsetLeft - pos1;
+        let yPos = hud.offsetTop - pos2 > window.innerHeight - 20 ? window.innerHeight - 100 : hud.offsetTop - pos2;
+        xPos = xPos < 8 ? 0 : xPos - 8;
+        yPos = yPos < 8 ? 0 : yPos - 8;
+        if (xPos !== hud.offsetLeft - pos1 || yPos !== hud.offsetTop - pos2) {
+          hud.style.top = yPos + "px";
+          hud.style.left = xPos + "px";
+        }
+        console.log(`Action Manager | CACHING: ${xPos} || ${yPos}.`);
+        game.user?.update({ flags: { lancer: { "action-manager": { pos: { top: yPos, left: xPos } } } } });
+        self.setPosition({ top: yPos, left: xPos });
+      }
+
+      document.onmouseup = closeDragElement;
+      document.onmousemove = elementDrag;
     });
   }
 

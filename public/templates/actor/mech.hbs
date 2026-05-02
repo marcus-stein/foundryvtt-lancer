@@ -29,20 +29,20 @@
   <section class="sheet-body scroll-body">
     <div class="tab stats" data-group="primary" data-tab="stats">
       <div class="stat-grid">
-        {{{stat-edit-max-card "HP" "mdi mdi-heart-outline" "system.hp.value" "system.hp.max"}}}
-        {{{stat-edit-max-card "HEAT" "cci cci-heat" "system.heat.value" "system.heat.max"}}}
-        {{{stat-view-card "EVASION" "cci cci-evasion" "system.evasion"}}}
-        {{{stat-view-card "ARMOR" "mdi mdi-shield-outline" "system.armor"}}}
-        {{{stat-edit-max-card "STRUCTURE" "cci cci-structure" "system.structure.value" "system.structure.max"}}}
-        {{{stat-edit-max-card "STRESS" "cci cci-reactor" "system.stress.value" "system.stress.max"}}}
-        {{{stat-view-card "E-DEF" "cci cci-edef" "system.edef"}}}
-        {{{stat-view-card "SPEED" "mdi mdi-arrow-right-bold-hexagon-outline" "system.speed"}}}
-        {{{stat-view-card "SAVE" "cci cci-save" "system.save"}}}
-        {{{stat-view-card "SENSORS" "cci cci-sensor" "system.sensor_range"}}}
-        {{{tech-flow-card "TECH ATK" "cci cci-tech-full" "system.tech_attack"}}}
+        {{{stat-edit-max-card "HP" "mdi mdi-heart-outline" "system.hp.value" "system.hp.max" tooltip=stat_tooltips.hp_max}}}
+        {{{stat-edit-max-card "HEAT" "cci cci-heat" "system.heat.value" "system.heat.max" tooltip=stat_tooltips.heat_max}}}
+        {{{stat-view-card "EVASION" "cci cci-evasion" "system.evasion" tooltip=stat_tooltips.evasion}}}
+        {{{stat-view-card "ARMOR" "mdi mdi-shield-outline" "system.armor" tooltip=stat_tooltips.armor}}}
+        {{{stat-edit-max-card "STRUCTURE" "cci cci-structure" "system.structure.value" "system.structure.max" tooltip=stat_tooltips.structure_max}}}
+        {{{stat-edit-max-card "STRESS" "cci cci-reactor" "system.stress.value" "system.stress.max" tooltip=stat_tooltips.stress_max}}}
+        {{{stat-view-card "E-DEF" "cci cci-edef" "system.edef" tooltip=stat_tooltips.edef}}}
+        {{{stat-view-card "SPEED" "mdi mdi-arrow-right-bold-hexagon-outline" "system.speed" tooltip=stat_tooltips.speed}}}
+        {{{stat-view-card "SAVE" "cci cci-save" "system.save" tooltip=stat_tooltips.save}}}
+        {{{stat-view-card "SENSORS" "cci cci-sensor" "system.sensor_range" tooltip=stat_tooltips.sensor_range}}}
+        {{{tech-flow-card "TECH ATK" "cci cci-tech-full" "system.tech_attack" tooltip=stat_tooltips.tech_attack}}}
         {{{stat-edit-rollable-card "BURN" "cci cci-burn" "system.burn"}}}
         {{{stat-edit-card "O.SHIELD" "mdi mdi-shield-star-outline" "system.overshield.value"}}}
-        {{{stat-edit-max-card "REPAIRS" "cci cci-repair" "system.repairs.value" "system.repairs.max"}}}
+        {{{stat-edit-max-card "REPAIRS" "cci cci-repair" "system.repairs.value" "system.repairs.max" tooltip=stat_tooltips.repairs_max}}}
         <div class="size-card">
           {{#if (eq system.size 0.5)}}
           <i class="cci cci-size-half size-icon theme--main"></i>
@@ -62,14 +62,14 @@
               type="checkbox" data-dtype="Boolean" {{checked system.core_energy}} />
           </div>
         </div>
-        {{{stat-rollable-card "GRIT" "cci cci-armor" "system.grit"}}}
+        {{{stat-rollable-card "GRIT" "cci cci-armor" "system.grit" tooltip=stat_tooltips.grit}}}
         {{{pilot-slot "system.pilot" value=pilot}}}
 
         <div class="wraprow double hase">
-          {{{stat-rollable-card "HUL" "" "system.hull"}}}
-          {{{stat-rollable-card "AGI" "" "system.agi"}}}
-          {{{stat-rollable-card "SYS" "" "system.sys"}}}
-          {{{stat-rollable-card "ENG" "" "system.eng"}}}
+          {{{stat-rollable-card "HUL" "" "system.hull" tooltip=stat_tooltips.hull}}}
+          {{{stat-rollable-card "AGI" "" "system.agi" tooltip=stat_tooltips.agi}}}
+          {{{stat-rollable-card "SYS" "" "system.sys" tooltip=stat_tooltips.sys}}}
+          {{{stat-rollable-card "ENG" "" "system.eng" tooltip=stat_tooltips.eng}}}
         </div>
         <div class="inventory" style="flex: inherit;margin:3px 10px">
           <button class="lancer-button" type="button" style="padding: 8px 16px"> View Inventory </button>

@@ -126,15 +126,16 @@ export class RangeField<Options extends fields.SchemaField.Options<RangeFieldSch
     return new Range(value);
   }
 
-  migrateSource(sourceData: any, fieldData: any) {
-    if (typeof fieldData.val == "string") {
-      fieldData.val = parseInt(fieldData.val) || 1;
+  _migrate(source: any, options?: any, _state?: any) {
+    if (typeof source.val == "string") {
+      const parsed = parseInt(source.val);
+      source.val = isNaN(parsed) ? 1 : parsed;
     }
-    if (fieldData.type) {
-      fieldData.type = restrict_enum(RangeType, RangeType.Range, fieldData.type);
+    if (source.type) {
+      source.type = restrict_enum(RangeType, RangeType.Range, source.type);
     }
 
-    return super.migrateSource(sourceData, fieldData);
+    return super._migrate(source, options, _state);
   }
 
   /** @override */

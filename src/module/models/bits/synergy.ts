@@ -46,17 +46,17 @@ export class SynergyField<Options extends fields.SchemaField.Options<SynergyFiel
     super(defineSynergyFieldSchema(), options);
   }
 
-  migrateSource(sourceData: any, fieldData: any) {
+  _migrate(source: any, options?: any, _state?: any) {
     // In some old imports we never properly separated synergy locations
-    if (fieldData.locations?.some((s: string) => s.includes(","))) {
-      fieldData.locations = fieldData.locations.flatMap((s: string) => s.split(",").map(s2 => s2.trim()));
+    if (source.locations?.some((s: string) => s.includes(","))) {
+      source.locations = source.locations.flatMap((s: string) => s.split(",").map((s2: string) => s2.trim()));
     }
     // Ensure all lowercase
-    if (fieldData.locations) {
-      fieldData.locations = fieldData.locations.map((l: string) => l.toLowerCase());
+    if (source.locations) {
+      source.locations = source.locations.map((l: string) => l.toLowerCase());
     }
 
-    return super.migrateSource(sourceData, fieldData);
+    return super._migrate(source, options, _state);
   }
 }
 

@@ -380,6 +380,9 @@ Hooks.once("ready", async function () {
   // Start preloading Handlebars templates in the background, don't await.
   preloadTemplates();
 
+  // If the user is already logged into Comp/Con from a prior session, populate the pilot cache.
+  populatePilotCache();
+
   console.log(`${lp} Foundry ready, doing final checks.`);
 
   await doMigration();
@@ -676,7 +679,7 @@ async function promptInstallCoreData() {
 
 function setupSheets() {
   const actors = foundry.documents.collections.Actors;
-  actors.unregisterSheet("core", foundry.appv1.sheets.ActorSheet);
+  actors.unregisterSheet("core", foundry.applications.sheets.ActorSheetV2);
   actors.registerSheet("lancer", LancerPilotSheet, { types: [EntryType.PILOT], makeDefault: true });
   actors.registerSheet("lancer", LancerMechSheet, { types: [EntryType.MECH], makeDefault: true });
   actors.registerSheet("lancer", LancerNPCSheet, { types: [EntryType.NPC], makeDefault: true });
@@ -685,7 +688,7 @@ function setupSheets() {
     makeDefault: true,
   });
   const items = foundry.documents.collections.Items;
-  items.unregisterSheet("core", foundry.appv1.sheets.ItemSheet);
+  items.unregisterSheet("core", foundry.applications.sheets.ItemSheetV2);
   items.registerSheet("lancer", LancerItemSheet, {
     types: [
       EntryType.SKILL,

@@ -66,6 +66,16 @@ export class MechModel extends LancerDataModel<MechSchema, Actor.Implementation,
       }
     }
 
+    // Initialize structure/stress if they're at schema defaults (value=0, max≤1),
+    // meaning they were never set by a frame-drop event. Default both to 4 (the
+    // typical frame value) so the actor doesn't show 0/4 on first open.
+    if (data.structure && data.structure.value === 0 && (data.structure.max == null || data.structure.max <= 1)) {
+      data.structure = { min: 0, max: 4, value: 4 };
+    }
+    if (data.stress && data.stress.value === 0 && (data.stress.max == null || data.stress.max <= 1)) {
+      data.stress = { min: 0, max: 4, value: 4 };
+    }
+
     return super.migrateData(data);
   }
 }

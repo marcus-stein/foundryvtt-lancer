@@ -24,7 +24,7 @@ export class InventoryDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static DEFAULT_OPTIONS = {
     classes: ["lancer", "inventory-editor"],
-    position: { width: 600, height: "auto" as const },
+    position: { width: 700, height: 700 },
   };
 
   static PARTS = {

@@ -19,6 +19,7 @@ import {
   spoofHelper,
   spDisplay,
   std_enum_select,
+  std_num_input,
   std_text_input,
   std_x_of_y,
   tippyContextMenu,
@@ -113,8 +114,8 @@ export function rangeEditor(path: string, options: HelperOptions): string {
   let type_options = extendHelper(options, { value: range.type }, { default: RangeType.Range });
   let range_type_selector = std_enum_select(path + ".type", RangeType, type_options);
 
-  let value_options = extendHelper(options, { value: range.val });
-  let value_input = std_text_input(path + ".val", value_options);
+  let value_options = extendHelper(options, { value: range.val, min: 0 });
+  let value_input = std_num_input(path + ".val", value_options);
 
   let delete_button = `<a class="gen-control" data-action="splice" data-path="${path}" style="margin: 4px;"><i class="fas fa-trash"></i></a>`;
 

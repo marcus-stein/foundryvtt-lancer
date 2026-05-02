@@ -50,8 +50,10 @@ export function stat_edit_card_max(
 ): string {
   let data_val = resolveHelperDotpath(options, data_path, 0);
   let max_val = resolveHelperDotpath(options, max_path, 0);
+  const tooltip = options.hash?.tooltip as string | undefined;
+  const tooltipAttr = tooltip ? ` data-tooltip="${tooltip.replace(/"/g, "&quot;")}" data-tooltip-direction="UP"` : "";
   return `
-    <div class="stat-card card clipped">
+    <div class="stat-card card clipped"${tooltipAttr}>
       <div class="lancer-header lancer-primary ">
         <i class="${icon} i--4 i--light header-icon"> </i>
         <span class="major">${title}</span>
@@ -119,8 +121,10 @@ export function stat_view_card(
       });
     }
   }
+  const tooltip = options.hash?.tooltip as string | undefined;
+  const tooltipAttr = tooltip ? ` data-tooltip="${tooltip.replace(/"/g, "&quot;")}" data-tooltip-direction="UP"` : "";
   return `
-    <div class="stat-card card clipped">
+    <div class="stat-card card clipped"${tooltipAttr}>
       <div class="lancer-header lancer-primary ">
         ${inc_if(`<i class="${icon} i--4 i--light header-icon"> </i>`, icon)}
         <span class="major">${title}</span>
@@ -142,8 +146,10 @@ export function stat_rollable_card(title: string, icon: string, data_path: strin
 // Shows a compact readonly value
 export function compact_stat_view(icon: string, data_path: string, options: HelperOptions): string {
   let data_val = resolveHelperDotpath(options, data_path);
+  const tooltip = options.hash?.tooltip as string | undefined;
+  const tooltipAttr = tooltip ? ` data-tooltip="${tooltip.replace(/"/g, "&quot;")}" data-tooltip-direction="UP"` : "";
   return `
-    <div class="compact-stat">
+    <div class="compact-stat"${tooltipAttr}>
         <i class="${icon} i--4 i--dark"></i>
         <span class="lancer-stat minor">${data_val}</span>
     </div>
@@ -159,8 +165,10 @@ export function compact_stat_edit(icon: string, data_path: string, max_path: str
     max_html = `<span class="lancer-stat minor" style="max-width: min-content;" > / </span>
     <span class="lancer-stat minor">${max_val}</span>`;
   }
+  const tooltip = options.hash?.tooltip as string | undefined;
+  const tooltipAttr = tooltip ? ` data-tooltip="${tooltip.replace(/"/g, "&quot;")}" data-tooltip-direction="UP"` : "";
   return `
-        <div class="compact-stat">
+        <div class="compact-stat"${tooltipAttr}>
           <i class="${icon} i--4 i--dark"></i>
           ${std_num_input(data_path, extendHelper(options, { classes: "lancer-stat minor" }))}
           ${max_html}
@@ -309,9 +317,11 @@ export function actor_flow_button(
 export function tech_flow_card(title: string, icon: string, data_path: string, options: HelperOptions): string {
   let uuid = getActorUUID(options) ?? "unknown";
   let data_val = resolveHelperDotpath(options, data_path);
+  const tooltip = options.hash?.tooltip as string | undefined;
+  const tooltipAttr = tooltip ? ` data-tooltip="${tooltip.replace(/"/g, "&quot;")}" data-tooltip-direction="UP"` : "";
 
   return `
-    <div class="stat-card card clipped">
+    <div class="stat-card card clipped"${tooltipAttr}>
       <div class="lancer-header lancer-primary">
         ${inc_if(`<i class="${icon} i--4 i--light header-icon"> </i>`, icon)}
         <span class="major">${title}</span>

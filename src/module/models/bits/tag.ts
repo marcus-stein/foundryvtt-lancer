@@ -221,12 +221,12 @@ export class TagField<Options extends fields.SchemaField.Options<TagFieldSchema>
     return super._cast(value);
   }
 
-  migrateSource(sourceData: any, fieldData: any) {
+  _migrate(source: any, options?: any, _state?: any) {
     // Convert old style tags
-    if (typeof fieldData?.tag == "object") {
-      fieldData.lid = fieldData.tag.fallback_lid;
+    if (typeof source?.tag == "object") {
+      source.lid = source.tag.fallback_lid;
     }
-    return super.migrateSource(sourceData, fieldData);
+    return super._migrate(source, options, _state);
   }
 }
 
